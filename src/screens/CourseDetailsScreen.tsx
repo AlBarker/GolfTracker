@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, FlatList, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, RoundStats } from '../types';
-import { Button, Card } from '../components/ui';
+import { BackArrow, Button, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { calculateRoundStats } from '../utils/stats';
 
@@ -10,6 +11,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetails'>;
 
 export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const { courseId } = route.params;
+  const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [stats, setStats] = useState<RoundStats | null>(null);
@@ -118,8 +120,11 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <ScrollView className="flex-1 bg-background">
-      <View className="px-4 py-6">
-        <Text className="text-2xl font-bold text-foreground mb-2">{course.name}</Text>
+      <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
+        <View className="flex-row items-center mb-4">
+          <BackArrow />
+          <Text className="text-2xl font-bold text-foreground ml-4">{course.name}</Text>
+        </View>
         <Text className="text-muted-foreground mb-6">
           {course.holes.length} holes • Par {course.holes.reduce((sum, hole) => sum + hole.par, 0)}
         </Text>

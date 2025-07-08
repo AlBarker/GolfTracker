@@ -5,7 +5,7 @@ export class DatabaseService {
   private db: SQLite.SQLiteDatabase;
 
   constructor() {
-    this.db = SQLite.openDatabaseSync('golf_diary.db');
+    this.db = SQLite.openDatabaseSync('parpal.db');
     this.initializeDatabase();
   }
 

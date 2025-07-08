@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Hole } from '../types';
-import { Button, Input, Card } from '../components/ui';
+import { BackArrow, Button, Input, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddCourse'>;
 
 export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
   const [courseName, setCourseName] = useState('');
+  const insets = useSafeAreaInsets();
   const [holes, setHoles] = useState<Hole[]>(
     Array.from({ length: 18 }, (_, i) => ({
       number: i + 1,
@@ -22,6 +24,20 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
     const newHoles = [...holes];
     newHoles[index] = { ...newHoles[index], [field]: value };
     setHoles(newHoles);
+  };
+
+  const incrementPar = (index: number) => {
+    const currentPar = holes[index]?.par || 3;
+    if (currentPar < 6) { // Reasonable upper limit for par
+      updateHole(index, 'par', currentPar + 1);
+    }
+  };
+
+  const decrementPar = (index: number) => {
+    const currentPar = holes[index]?.par || 3;
+    if (currentPar > 3) { // Reasonable lower limit for par
+      updateHole(index, 'par', currentPar - 1);
+    }
   };
 
   const saveCourse = async () => {
@@ -51,8 +67,11 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <ScrollView className="flex-1 bg-background">
-      <View className="px-4 py-6">
-        <Text className="text-2xl font-bold text-foreground mb-6">Add New Course</Text>
+      <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
+        <View className="flex-row items-center mb-6">
+          <BackArrow />
+          <Text className="text-2xl font-bold text-foreground ml-4">Add New Course</Text>
+        </View>
         
         <Input
           label="Course Name"
@@ -71,13 +90,32 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
             
             <View className="flex-row gap-4">
               <View className="flex-1">
-                <Input
-                  label="Par"
-                  value={hole.par.toString()}
-                  onChangeText={(text) => updateHole(index, 'par', parseInt(text) || 3)}
-                  keyboardType="numeric"
-                  placeholder="Par"
-                />
+                <Text className="text-foreground font-medium mb-2">Par</Text>
+                <View className="flex-row items-center">
+                  <TouchableOpacity
+                    onPress={() => decrementPar(index)}
+                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center mr-2"
+                  >
+                    <Text className="text-secondary-foreground font-bold text-lg">-</Text>
+                  </TouchableOpacity>
+                  
+                  <View className="flex-1">
+                    <Input
+                      value={hole.par.toString()}
+                      onChangeText={(text) => updateHole(index, 'par', parseInt(text) || 4)}
+                      keyboardType="numeric"
+                      placeholder="Par"
+                      className="text-center"
+                    />
+                  </View>
+                  
+                  <TouchableOpacity
+                    onPress={() => incrementPar(index)}
+                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center ml-2"
+                  >
+                    <Text className="text-secondary-foreground font-bold text-lg">+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               
               <View className="flex-1">

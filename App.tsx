@@ -18,37 +18,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen 
-          name="Home" 
-          component={HomeScreen} 
-          options={{ title: 'My Golf Diary' }}
-        />
-        <Stack.Screen 
-          name="AddCourse" 
-          component={AddCourseScreen} 
-          options={{ title: 'Add Course' }}
-        />
-        <Stack.Screen 
-          name="CourseDetails" 
-          component={CourseDetailsScreen} 
-          options={{ title: 'Course Details' }}
-        />
-        <Stack.Screen 
-          name="RoundEntry" 
-          component={RoundEntryScreen} 
-          options={{ title: 'Round Entry' }}
-        />
-        <Stack.Screen 
-          name="LiveScoring" 
-          component={LiveScoringScreen} 
-          options={{ title: 'Live Scoring' }}
-        />
-        <Stack.Screen 
-          name="RoundDetails" 
-          component={RoundDetailsScreen} 
-          options={{ title: 'Round Details' }}
-        />
+      <Stack.Navigator 
+        initialRouteName="Home"
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="AddCourse" component={AddCourseScreen} />
+        <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
+        <Stack.Screen name="RoundEntry" component={RoundEntryScreen} />
+        <Stack.Screen name="LiveScoring" component={LiveScoringScreen} />
+        <Stack.Screen name="RoundDetails" component={RoundDetailsScreen} />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>

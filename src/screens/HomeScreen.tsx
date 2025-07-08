@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course } from '../types';
 import { Button, Card } from '../components/ui';
@@ -10,6 +11,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     loadCourses();
@@ -50,8 +52,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View className="flex-1 bg-background">
-      <View className="px-4 py-6">
-        <Text className="text-2xl font-bold text-foreground mb-6">My Golf Diary</Text>
+      <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
+        <Text className="text-2xl font-bold text-foreground mb-6">ParPal</Text>
         
         <Button
           title="Add New Course"

@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a React Native golf tracking app built with Expo, using:
+This is ParPal, a React Native golf tracking app built with Expo, using:
 
 - **Navigation**: React Navigation v7 with native stack navigator
 - **UI**: Custom UI components with Tailwind CSS (NativeWind)

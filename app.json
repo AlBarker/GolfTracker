@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MyGolfDiary",
-    "slug": "MyGolfDiary",
+    "name": "ParPal",
+    "slug": "ParPal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

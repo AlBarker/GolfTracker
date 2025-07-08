@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore } from '../types';
-import { Button, Input, Card, Select, Switch } from '../components/ui';
+import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui';
 import { storageService } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveScoring'>;
 
 export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   const { courseId } = route.params;
+  const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [currentHole, setCurrentHole] = useState(0);
   const [holeScores, setHoleScores] = useState<HoleScore[]>([]);
@@ -151,8 +153,14 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <View className="flex-1 bg-background">
+      <View className="px-4 pt-6" style={{ paddingTop: insets.top + 24 }}>
+        <View className="flex-row items-center mb-4">
+          <BackArrow />
+          <Text className="text-2xl font-bold text-foreground ml-4">Live Scoring</Text>
+        </View>
+      </View>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
-        <View className="px-4 py-6">
+        <View className="px-4 pb-6">
         {/* Main Score Input - Prominent */}
         <Card className="mb-6 bg-primary/5 border border-primary/20">
           <View className="items-center mb-4">

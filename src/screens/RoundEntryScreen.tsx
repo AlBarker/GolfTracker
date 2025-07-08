@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore } from '../types';
-import { Button, Input, Card, Select, Switch } from '../components/ui';
+import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { calculateRoundTotal } from '../utils/stats';
 
@@ -10,6 +11,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RoundEntry'>;
 
 export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
   const { courseId, roundId } = route.params;
+  const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [round, setRound] = useState<Round | null>(null);
   const [datePlayed, setDatePlayed] = useState(new Date().toISOString().split('T')[0]);
@@ -119,10 +121,13 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <ScrollView className="flex-1 bg-background">
-      <View className="px-4 py-6">
-        <Text className="text-2xl font-bold text-foreground mb-2">
-          {roundId ? 'Edit Round' : 'Add Round'}
-        </Text>
+      <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
+        <View className="flex-row items-center mb-4">
+          <BackArrow />
+          <Text className="text-2xl font-bold text-foreground ml-4">
+            {roundId ? 'Edit Round' : 'Add Round'}
+          </Text>
+        </View>
         <Text className="text-muted-foreground mb-6">{course.name}</Text>
 
         <Input
