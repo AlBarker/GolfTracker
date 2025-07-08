@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course } from '../types';
 import { Button, Card } from '../components/ui';
@@ -16,6 +17,12 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     loadCourses();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCourses();
+    }, [])
+  );
 
   const loadCourses = async () => {
     try {

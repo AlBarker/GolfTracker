@@ -13,12 +13,12 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   return (
-    <View className="mb-4">
+    <View className="">
       {label && (
         <Text className="text-foreground font-medium mb-2">{label}</Text>
       )}
       <TextInput
-        className={`border bg-background rounded-lg px-3 py-3 text-base text-foreground ${
+        className={`border bg-background rounded-xl px-2 py-3 text-foreground ${
           error ? 'border-destructive' : 'border-border'
         } ${className}`}
         {...props}

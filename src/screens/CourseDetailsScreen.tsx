@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, FlatList, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, RoundStats } from '../types';
 import { BackArrow, Button, Card } from '../components/ui';
@@ -20,6 +21,12 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     loadCourseData();
   }, [courseId]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCourseData();
+    }, [courseId])
+  );
 
   const loadCourseData = async () => {
     try {
