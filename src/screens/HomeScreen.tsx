@@ -1,41 +1,70 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Course } from '../types';
+import { RootStackParamList, Course, Round } from '../types';
 import { Button, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
+interface CourseWithStats extends Course {
+  roundsPlayed: number;
+  bestScore: number | null;
+}
+
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseWithStats[]>([]);
+  const [recentRounds, setRecentRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    loadCourses();
+    loadData();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadCourses();
+      loadData();
     }, [])
   );
 
-  const loadCourses = async () => {
+  const loadData = async () => {
     try {
       const savedCourses = await storageService.getCourses();
-      setCourses(savedCourses);
+      const allRounds = await storageService.getRounds();
+      
+      // Calculate course statistics
+      const coursesWithStats: CourseWithStats[] = savedCourses.map(course => {
+        const courseRounds = allRounds.filter(round => round.courseId === course.id);
+        const roundsPlayed = courseRounds.length;
+        const bestScore = roundsPlayed > 0 
+          ? Math.min(...courseRounds.map(round => round.totalScore))
+          : null;
+        
+        return {
+          ...course,
+          roundsPlayed,
+          bestScore
+        };
+      });
+      
+      // Get recent rounds (last 5)
+      const sortedRounds = allRounds
+        .sort((a, b) => new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime())
+        .slice(0, 5);
+      
+      setCourses(coursesWithStats);
+      setRecentRounds(sortedRounds);
     } catch (error) {
-      console.error('Error loading courses:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderCourseItem = ({ item }: { item: Course }) => (
+  const renderCourseItem = ({ item }: { item: CourseWithStats }) => (
     <TouchableOpacity
       onPress={() => navigation.navigate('CourseDetails', { courseId: item.id })}
       className="mb-3"
@@ -45,9 +74,52 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         <Text className="text-muted-foreground mt-1">
           {item.holes.length} holes • Par {item.holes.reduce((sum, hole) => sum + hole.par, 0)}
         </Text>
+        {item.roundsPlayed > 0 && item.bestScore && (
+          <View className="flex-row justify-between mt-2">
+            <Text className="text-sm text-muted-foreground">
+              {item.roundsPlayed} round{item.roundsPlayed !== 1 ? 's' : ''} played
+            </Text>
+            <Text className="text-sm font-medium text-primary">
+              Best: {item.bestScore}
+            </Text>
+          </View>
+        )}
       </Card>
     </TouchableOpacity>
   );
+
+  const renderRecentRoundItem = ({ item }: { item: Round }) => {
+    const course = courses.find(c => c.id === item.courseId);
+    const coursePar = course?.holes.reduce((sum, hole) => sum + hole.par, 0) || 0;
+    const scoreToPar = item.totalScore - coursePar;
+    
+    return (
+      <TouchableOpacity
+        onPress={() => navigation.navigate('RoundDetails', { roundId: item.id })}
+        className="mb-3"
+      >
+        <Card>
+          <View className="flex-row justify-between items-center">
+            <View className="flex-1">
+              <Text className="text-lg font-semibold text-card-foreground">{course?.name}</Text>
+              <Text className="text-muted-foreground text-sm">
+                {new Date(item.datePlayed).toLocaleDateString()}
+              </Text>
+            </View>
+            <View className="items-end">
+              <Text className="text-xl font-bold text-primary">{item.totalScore}</Text>
+              <Text className={`text-sm font-medium ${
+                scoreToPar === 0 ? 'text-foreground' :
+                scoreToPar > 0 ? 'text-red-600' : 'text-green-600'
+              }`}>
+                {scoreToPar > 0 ? '+' : ''}{scoreToPar}
+              </Text>
+            </View>
+          </View>
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -58,31 +130,53 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background">
       <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
         <Text className="text-2xl font-bold text-foreground mb-6">ParPal</Text>
         
-        <Button
-          title="Add New Course"
-          onPress={() => navigation.navigate('AddCourse')}
-          className="mb-6"
-        />
-
-        {courses.length === 0 ? (
-          <View className="flex-1 justify-center items-center">
-            <Text className="text-muted-foreground text-center">
-              No courses yet. Add your first course to get started!
-            </Text>
+        {/* Courses Section */}
+        <View className="mb-8">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-lg font-semibold text-foreground">My Courses</Text>
+            <Button
+              title="Add Course"
+              onPress={() => navigation.navigate('AddCourse')}
+              variant="outline"
+              className="px-4 py-2"
+            />
           </View>
-        ) : (
-          <FlatList
-            data={courses}
-            renderItem={renderCourseItem}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-          />
+
+          {courses.length === 0 ? (
+            <View className="py-8 items-center">
+              <Text className="text-muted-foreground text-center">
+                No courses yet. Add your first course to get started!
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={courses}
+              renderItem={renderCourseItem}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          )}
+        </View>
+        
+        {/* Recent Rounds Section */}
+        {recentRounds.length > 0 && (
+          <View>
+            <Text className="text-lg font-semibold text-foreground mb-4">Recent Rounds</Text>
+            <FlatList
+              data={recentRounds}
+              renderItem={renderRecentRoundItem}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+            />
+          </View>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 };

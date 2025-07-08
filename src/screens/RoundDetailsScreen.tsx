@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Course, Round, HoleScore } from '../types';
+import { RootStackParamList, Course, Round } from '../types';
 import { BackArrow, Button, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
 
