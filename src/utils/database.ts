@@ -1,104 +1,86 @@
-import * as SQLite from 'expo-sqlite';
+import { supabase } from './supabase';
 import { Course, Round, HoleScore, Hole } from '../types';
 
 export class DatabaseService {
-  private db: SQLite.SQLiteDatabase;
-
   constructor() {
-    this.db = SQLite.openDatabaseSync('parpal.db');
-    this.initializeDatabase();
-  }
-
-  private initializeDatabase() {
-    // Create tables
-    this.db.execSync(`
-      CREATE TABLE IF NOT EXISTS courses (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      );
-    `);
-
-    this.db.execSync(`
-      CREATE TABLE IF NOT EXISTS holes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        course_id TEXT NOT NULL,
-        number INTEGER NOT NULL,
-        par INTEGER NOT NULL,
-        handicap_index INTEGER NOT NULL,
-        FOREIGN KEY (course_id) REFERENCES courses (id) ON DELETE CASCADE
-      );
-    `);
-
-    this.db.execSync(`
-      CREATE TABLE IF NOT EXISTS rounds (
-        id TEXT PRIMARY KEY,
-        course_id TEXT NOT NULL,
-        date_played TEXT NOT NULL,
-        total_score INTEGER NOT NULL,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY (course_id) REFERENCES courses (id) ON DELETE CASCADE
-      );
-    `);
-
-    this.db.execSync(`
-      CREATE TABLE IF NOT EXISTS hole_scores (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        round_id TEXT NOT NULL,
-        hole_number INTEGER NOT NULL,
-        strokes INTEGER NOT NULL,
-        putts INTEGER,
-        fairway_hit TEXT,
-        green_in_regulation INTEGER,
-        penalty_shots INTEGER,
-        up_and_down INTEGER,
-        FOREIGN KEY (round_id) REFERENCES rounds (id) ON DELETE CASCADE
-      );
-    `);
+    // No local database initialization needed with Supabase
   }
 
   // Course operations
   async saveCourse(course: Course): Promise<void> {
-    this.db.runSync(
-      'INSERT OR REPLACE INTO courses (id, name, created_at) VALUES (?, ?, ?)',
-      [course.id, course.name, course.createdAt.toISOString()]
-    );
+    // Insert or update course
+    const { error: courseError } = await supabase
+      .from('courses')
+      .upsert({
+        id: course.id,
+        name: course.name,
+        created_at: course.createdAt.toISOString()
+      });
+
+    if (courseError) {
+      throw new Error(`Failed to save course: ${courseError.message}`);
+    }
 
     // Delete existing holes for this course
-    this.db.runSync('DELETE FROM holes WHERE course_id = ?', [course.id]);
+    const { error: deleteError } = await supabase
+      .from('holes')
+      .delete()
+      .eq('course_id', course.id);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete existing holes: ${deleteError.message}`);
+    }
 
     // Insert holes
-    for (const hole of course.holes) {
-      this.db.runSync(
-        'INSERT INTO holes (course_id, number, par, handicap_index) VALUES (?, ?, ?, ?)',
-        [course.id, hole.number, hole.par, hole.handicapIndex]
-      );
+    const holesData = course.holes.map(hole => ({
+      course_id: course.id,
+      number: hole.number,
+      par: hole.par,
+      handicap_index: hole.handicapIndex
+    }));
+
+    const { error: holesError } = await supabase
+      .from('holes')
+      .insert(holesData);
+
+    if (holesError) {
+      throw new Error(`Failed to save holes: ${holesError.message}`);
     }
   }
 
   async getCourses(): Promise<Course[]> {
-    const coursesResult = this.db.getAllSync(
-      'SELECT id, name, created_at FROM courses ORDER BY name'
-    );
+    const { data: coursesData, error: coursesError } = await supabase
+      .from('courses')
+      .select('id, name, created_at')
+      .order('name');
+
+    if (coursesError) {
+      throw new Error(`Failed to fetch courses: ${coursesError.message}`);
+    }
 
     const courses: Course[] = [];
-    for (const courseRow of coursesResult) {
-      const holesResult = this.db.getAllSync(
-        'SELECT number, par, handicap_index FROM holes WHERE course_id = ? ORDER BY number',
-        [courseRow.id]
-      );
+    for (const courseRow of coursesData || []) {
+      const { data: holesData, error: holesError } = await supabase
+        .from('holes')
+        .select('number, par, handicap_index')
+        .eq('course_id', courseRow.id)
+        .order('number');
 
-      const holes: Hole[] = holesResult.map(hole => ({
-        number: hole.number as number,
-        par: hole.par as number,
-        handicapIndex: hole.handicap_index as number
+      if (holesError) {
+        throw new Error(`Failed to fetch holes for course ${courseRow.id}: ${holesError.message}`);
+      }
+
+      const holes: Hole[] = (holesData || []).map(hole => ({
+        number: hole.number,
+        par: hole.par,
+        handicapIndex: hole.handicap_index
       }));
 
       courses.push({
-        id: courseRow.id as string,
-        name: courseRow.name as string,
+        id: courseRow.id,
+        name: courseRow.name,
         holes,
-        createdAt: new Date(courseRow.created_at as string)
+        createdAt: new Date(courseRow.created_at)
       });
     }
 
@@ -106,96 +88,147 @@ export class DatabaseService {
   }
 
   async getCourse(id: string): Promise<Course | null> {
-    const courseResult = this.db.getFirstSync(
-      'SELECT id, name, created_at FROM courses WHERE id = ?',
-      [id]
-    );
+    const { data: courseData, error: courseError } = await supabase
+      .from('courses')
+      .select('id, name, created_at')
+      .eq('id', id)
+      .single();
 
-    if (!courseResult) return null;
+    if (courseError) {
+      if (courseError.code === 'PGRST116') {
+        return null; // No rows returned
+      }
+      throw new Error(`Failed to fetch course: ${courseError.message}`);
+    }
 
-    const holesResult = this.db.getAllSync(
-      'SELECT number, par, handicap_index FROM holes WHERE course_id = ? ORDER BY number',
-      [id]
-    );
+    const { data: holesData, error: holesError } = await supabase
+      .from('holes')
+      .select('number, par, handicap_index')
+      .eq('course_id', id)
+      .order('number');
 
-    const holes: Hole[] = holesResult.map(hole => ({
-      number: hole.number as number,
-      par: hole.par as number,
-      handicapIndex: hole.handicap_index as number
+    if (holesError) {
+      throw new Error(`Failed to fetch holes for course ${id}: ${holesError.message}`);
+    }
+
+    const holes: Hole[] = (holesData || []).map(hole => ({
+      number: hole.number,
+      par: hole.par,
+      handicapIndex: hole.handicap_index
     }));
 
     return {
-      id: courseResult.id as string,
-      name: courseResult.name as string,
+      id: courseData.id,
+      name: courseData.name,
       holes,
-      createdAt: new Date(courseResult.created_at as string)
+      createdAt: new Date(courseData.created_at)
     };
   }
 
   async deleteCourse(id: string): Promise<void> {
-    this.db.runSync('DELETE FROM courses WHERE id = ?', [id]);
+    const { error } = await supabase
+      .from('courses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete course: ${error.message}`);
+    }
   }
 
   // Round operations
   async saveRound(round: Round): Promise<void> {
-    this.db.runSync(
-      'INSERT OR REPLACE INTO rounds (id, course_id, date_played, total_score, created_at) VALUES (?, ?, ?, ?, ?)',
-      [round.id, round.courseId, round.datePlayed.toISOString(), round.totalScore, round.createdAt.toISOString()]
-    );
+    // Insert or update round
+    const { error: roundError } = await supabase
+      .from('rounds')
+      .upsert({
+        id: round.id,
+        course_id: round.courseId,
+        date_played: round.datePlayed.toISOString(),
+        total_score: round.totalScore,
+        created_at: round.createdAt.toISOString()
+      });
+
+    if (roundError) {
+      throw new Error(`Failed to save round: ${roundError.message}`);
+    }
 
     // Delete existing hole scores for this round
-    this.db.runSync('DELETE FROM hole_scores WHERE round_id = ?', [round.id]);
+    const { error: deleteError } = await supabase
+      .from('hole_scores')
+      .delete()
+      .eq('round_id', round.id);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete existing hole scores: ${deleteError.message}`);
+    }
 
     // Insert hole scores
-    for (const holeScore of round.holes) {
-      this.db.runSync(
-        'INSERT INTO hole_scores (round_id, hole_number, strokes, putts, fairway_hit, green_in_regulation, penalty_shots, up_and_down) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          round.id,
-          holeScore.holeNumber,
-          holeScore.strokes,
-          holeScore.putts || null,
-          holeScore.fairwayHit || null,
-          holeScore.greenInRegulation ? 1 : 0,
-          holeScore.penaltyShots || null,
-          holeScore.upAndDown ? 1 : 0
-        ]
-      );
+    const holeScoresData = round.holes.map(holeScore => ({
+      round_id: round.id,
+      hole_number: holeScore.holeNumber,
+      strokes: holeScore.strokes,
+      putts: holeScore.putts || null,
+      fairway_hit: holeScore.fairwayHit || null,
+      green_in_regulation: holeScore.greenInRegulation || false,
+      penalty_shots: holeScore.penaltyShots || 0,
+      up_and_down: holeScore.upAndDown || false
+    }));
+
+    const { error: holeScoresError } = await supabase
+      .from('hole_scores')
+      .insert(holeScoresData);
+
+    if (holeScoresError) {
+      throw new Error(`Failed to save hole scores: ${holeScoresError.message}`);
     }
   }
 
   async getRounds(courseId?: string): Promise<Round[]> {
-    const query = courseId 
-      ? 'SELECT id, course_id, date_played, total_score, created_at FROM rounds WHERE course_id = ? ORDER BY date_played DESC'
-      : 'SELECT id, course_id, date_played, total_score, created_at FROM rounds ORDER BY date_played DESC';
-    
-    const params = courseId ? [courseId] : [];
-    const roundsResult = this.db.getAllSync(query, params);
+    let query = supabase
+      .from('rounds')
+      .select('id, course_id, date_played, total_score, created_at')
+      .order('date_played', { ascending: false });
+
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+
+    const { data: roundsData, error: roundsError } = await query;
+
+    if (roundsError) {
+      throw new Error(`Failed to fetch rounds: ${roundsError.message}`);
+    }
 
     const rounds: Round[] = [];
-    for (const roundRow of roundsResult) {
-      const holeScoresResult = this.db.getAllSync(
-        'SELECT hole_number, strokes, putts, fairway_hit, green_in_regulation, penalty_shots, up_and_down FROM hole_scores WHERE round_id = ? ORDER BY hole_number',
-        [roundRow.id]
-      );
+    for (const roundRow of roundsData || []) {
+      const { data: holeScoresData, error: holeScoresError } = await supabase
+        .from('hole_scores')
+        .select('hole_number, strokes, putts, fairway_hit, green_in_regulation, penalty_shots, up_and_down')
+        .eq('round_id', roundRow.id)
+        .order('hole_number');
 
-      const holes: HoleScore[] = holeScoresResult.map(score => ({
-        holeNumber: score.hole_number as number,
-        strokes: score.strokes as number,
-        putts: score.putts as number | undefined,
+      if (holeScoresError) {
+        throw new Error(`Failed to fetch hole scores for round ${roundRow.id}: ${holeScoresError.message}`);
+      }
+
+      const holes: HoleScore[] = (holeScoresData || []).map(score => ({
+        holeNumber: score.hole_number,
+        strokes: score.strokes,
+        putts: score.putts || undefined,
         fairwayHit: score.fairway_hit as 'hit' | 'left' | 'right' | undefined,
-        greenInRegulation: score.green_in_regulation ? true : false,
-        penaltyShots: score.penalty_shots as number | undefined,
-        upAndDown: score.up_and_down ? true : false
+        greenInRegulation: score.green_in_regulation,
+        penaltyShots: score.penalty_shots || undefined,
+        upAndDown: score.up_and_down
       }));
 
       rounds.push({
-        id: roundRow.id as string,
-        courseId: roundRow.course_id as string,
-        datePlayed: new Date(roundRow.date_played as string),
+        id: roundRow.id,
+        courseId: roundRow.course_id,
+        datePlayed: new Date(roundRow.date_played),
         holes,
-        totalScore: roundRow.total_score as number,
-        createdAt: new Date(roundRow.created_at as string)
+        totalScore: roundRow.total_score,
+        createdAt: new Date(roundRow.created_at)
       });
     }
 
@@ -203,40 +236,58 @@ export class DatabaseService {
   }
 
   async getRound(id: string): Promise<Round | null> {
-    const roundResult = this.db.getFirstSync(
-      'SELECT id, course_id, date_played, total_score, created_at FROM rounds WHERE id = ?',
-      [id]
-    );
+    const { data: roundData, error: roundError } = await supabase
+      .from('rounds')
+      .select('id, course_id, date_played, total_score, created_at')
+      .eq('id', id)
+      .single();
 
-    if (!roundResult) return null;
+    if (roundError) {
+      if (roundError.code === 'PGRST116') {
+        return null; // No rows returned
+      }
+      throw new Error(`Failed to fetch round: ${roundError.message}`);
+    }
 
-    const holeScoresResult = this.db.getAllSync(
-      'SELECT hole_number, strokes, putts, fairway_hit, green_in_regulation, penalty_shots, up_and_down FROM hole_scores WHERE round_id = ? ORDER BY hole_number',
-      [id]
-    );
+    const { data: holeScoresData, error: holeScoresError } = await supabase
+      .from('hole_scores')
+      .select('hole_number, strokes, putts, fairway_hit, green_in_regulation, penalty_shots, up_and_down')
+      .eq('round_id', id)
+      .order('hole_number');
 
-    const holes: HoleScore[] = holeScoresResult.map(score => ({
-      holeNumber: score.hole_number as number,
-      strokes: score.strokes as number,
-      putts: score.putts as number | undefined,
+    if (holeScoresError) {
+      throw new Error(`Failed to fetch hole scores for round ${id}: ${holeScoresError.message}`);
+    }
+
+    const holes: HoleScore[] = (holeScoresData || []).map(score => ({
+      holeNumber: score.hole_number,
+      strokes: score.strokes,
+      putts: score.putts || undefined,
       fairwayHit: score.fairway_hit as 'hit' | 'left' | 'right' | undefined,
-      greenInRegulation: score.green_in_regulation ? true : false,
-      penaltyShots: score.penalty_shots as number | undefined,
-      upAndDown: score.up_and_down ? true : false
+      greenInRegulation: score.green_in_regulation,
+      penaltyShots: score.penalty_shots || undefined,
+      upAndDown: score.up_and_down
     }));
 
     return {
-      id: roundResult.id as string,
-      courseId: roundResult.course_id as string,
-      datePlayed: new Date(roundResult.date_played as string),
+      id: roundData.id,
+      courseId: roundData.course_id,
+      datePlayed: new Date(roundData.date_played),
       holes,
-      totalScore: roundResult.total_score as number,
-      createdAt: new Date(roundResult.created_at as string)
+      totalScore: roundData.total_score,
+      createdAt: new Date(roundData.created_at)
     };
   }
 
   async deleteRound(id: string): Promise<void> {
-    this.db.runSync('DELETE FROM rounds WHERE id = ?', [id]);
+    const { error } = await supabase
+      .from('rounds')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete round: ${error.message}`);
+    }
   }
 
   // Get all rounds for statistics
