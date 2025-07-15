@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { RootStackParamList, Course, Round } from '../types';
 import { Button, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -19,6 +20,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [recentRounds, setRecentRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
 
@@ -153,20 +155,37 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background">
-      <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
+    <Pressable onPress={() => setShowDropdown(false)} className="flex-1">
+      <ScrollView className="flex-1 bg-background">
+        <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
         <View className="flex-row justify-between items-center mb-6">
           <Text className="text-2xl font-bold text-foreground">ParPal</Text>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-sm text-muted-foreground">
-              {user?.email}
-            </Text>
-            <Button
-              title="Logout"
-              onPress={handleLogout}
-              variant="outline"
-              size="sm"
-            />
+          <View className="relative">
+            <TouchableOpacity
+              onPress={() => setShowDropdown(!showDropdown)}
+              className="w-10 h-10 rounded-full bg-muted items-center justify-center"
+            >
+              <Ionicons name="settings-outline" size={20} color="#6b7280" />
+            </TouchableOpacity>
+            
+            {showDropdown && (
+              <View className="absolute top-12 right-0 bg-card rounded-lg shadow-lg border border-border p-1 min-w-[150px] z-50">
+                <View className="px-3 py-2 border-b border-border">
+                  <Text className="text-xs text-muted-foreground">Signed in as</Text>
+                  <Text className="text-sm font-medium text-foreground">{user?.email}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowDropdown(false);
+                    handleLogout();
+                  }}
+                  className="px-3 py-2 flex-row items-center gap-2"
+                >
+                  <Ionicons name="log-out-outline" size={16} color="#6b7280" />
+                  <Text className="text-sm text-foreground">Logout</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
         
@@ -212,7 +231,8 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             />
           </View>
         )}
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </Pressable>
   );
 };

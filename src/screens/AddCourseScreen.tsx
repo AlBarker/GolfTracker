@@ -6,6 +6,7 @@ import { RootStackParamList, Course, Hole } from '../types';
 import { BackArrow, Button, Input, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
+import { randomUUID } from 'expo-crypto';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddCourse'>;
 
@@ -56,7 +57,7 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
     setSaving(true);
     try {
       const newCourse: Course = {
-        id: Date.now().toString(),
+        id: randomUUID(),
         userId: user.id,
         name: courseName.trim(),
         holes: holes,

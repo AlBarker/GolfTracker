@@ -6,6 +6,7 @@ import { RootStackParamList, Course, Round, HoleScore } from '../types';
 import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { calculateRoundTotal } from '../utils/stats';
+import { randomUUID } from 'expo-crypto';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoundEntry'>;
 
@@ -93,7 +94,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
     setSaving(true);
     try {
       const roundData: Round = {
-        id: roundId || Date.now().toString(),
+        id: roundId || randomUUID(),
         courseId,
         datePlayed: new Date(datePlayed),
         holes: holeScores,

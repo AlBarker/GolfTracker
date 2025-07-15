@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore } from '../types';
 import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui';
 import { storageService } from '../utils/storage';
+import { randomUUID } from 'expo-crypto';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveScoring'>;
 
@@ -113,7 +114,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
       const totalScore = finalScores.reduce((sum, hole) => sum + hole.strokes, 0);
       
       const roundData: Round = {
-        id: Date.now().toString(),
+        id: randomUUID(),
         courseId,
         datePlayed: new Date(),
         holes: finalScores,
