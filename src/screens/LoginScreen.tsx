@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +13,7 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { signIn } = useAuth();
+  const { signIn, signInWithApple } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -35,6 +35,17 @@ export const LoginScreen: React.FC = () => {
     navigation.navigate('SignUp');
   };
 
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    try {
+      await signInWithApple();
+    } catch (error) {
+      Alert.alert('Apple Sign In Failed', error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -46,8 +57,8 @@ export const LoginScreen: React.FC = () => {
             Welcome to ParPal
           </Text>
           
-          <View className="space-y-4">
-            <View>
+          <View>
+            <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
               <TextInput
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
@@ -60,7 +71,7 @@ export const LoginScreen: React.FC = () => {
               />
             </View>
 
-            <View>
+            <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
               <TextInput
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
@@ -79,7 +90,27 @@ export const LoginScreen: React.FC = () => {
               className="mt-6"
             />
 
-            <View className="flex-row justify-center items-center mt-4">
+            {Platform.OS === 'ios' && (
+              <>
+                <View className="flex-row items-center my-6">
+                  <View className="flex-1 h-px bg-gray-300" />
+                  <Text className="mx-4 text-gray-500">or</Text>
+                  <View className="flex-1 h-px bg-gray-300" />
+                </View>
+
+                <View>
+                  <TouchableOpacity
+                    onPress={handleAppleSignIn}
+                    disabled={loading}
+                    className="w-full flex-row items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-black disabled:opacity-50"
+                  >
+                    <Text className="ml-2 text-white font-medium">Continue with Apple</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            <View className="flex-row justify-center items-center mt-6">
               <Text className="text-gray-600">Don't have an account? </Text>
               <Button
                 title="Sign Up"

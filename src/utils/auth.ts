@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 import { User, Session } from '@supabase/supabase-js';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { Platform } from 'react-native';
 
 export interface AuthState {
   user: User | null;
@@ -32,6 +34,40 @@ export const authService = {
     }
     
     return data;
+  },
+
+
+  async signInWithApple() {
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const { identityToken } = credential;
+
+      if (!identityToken) {
+        throw new Error('No identity token received from Apple');
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: identityToken,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    } catch (error: any) {
+      if (error.code === 'ERR_CANCELED') {
+        throw new Error('Apple sign-in was cancelled');
+      }
+      throw new Error(error.message || 'Apple sign-in failed');
+    }
   },
 
   async signOut() {
