@@ -13,6 +13,7 @@ export class DatabaseService {
       .from('courses')
       .upsert({
         id: course.id,
+        user_id: course.userId,
         name: course.name,
         created_at: course.createdAt.toISOString()
       });
@@ -51,7 +52,7 @@ export class DatabaseService {
   async getCourses(): Promise<Course[]> {
     const { data: coursesData, error: coursesError } = await supabase
       .from('courses')
-      .select('id, name, created_at')
+      .select('id, user_id, name, created_at')
       .order('name');
 
     if (coursesError) {
@@ -78,6 +79,7 @@ export class DatabaseService {
 
       courses.push({
         id: courseRow.id,
+        userId: courseRow.user_id,
         name: courseRow.name,
         holes,
         createdAt: new Date(courseRow.created_at)
@@ -90,7 +92,7 @@ export class DatabaseService {
   async getCourse(id: string): Promise<Course | null> {
     const { data: courseData, error: courseError } = await supabase
       .from('courses')
-      .select('id, name, created_at')
+      .select('id, user_id, name, created_at')
       .eq('id', id)
       .single();
 
@@ -119,6 +121,7 @@ export class DatabaseService {
 
     return {
       id: courseData.id,
+      userId: courseData.user_id,
       name: courseData.name,
       holes,
       createdAt: new Date(courseData.created_at)

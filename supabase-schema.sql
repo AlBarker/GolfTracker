@@ -1,6 +1,7 @@
 -- Create courses table
 CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -37,6 +38,7 @@ CREATE TABLE hole_scores (
 );
 
 -- Create indexes for better performance
+CREATE INDEX idx_courses_user_id ON courses(user_id);
 CREATE INDEX idx_holes_course_id ON holes(course_id);
 CREATE INDEX idx_rounds_course_id ON rounds(course_id);
 CREATE INDEX idx_rounds_date_played ON rounds(date_played);
@@ -48,8 +50,18 @@ ALTER TABLE holes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hole_scores ENABLE ROW LEVEL SECURITY;
 
--- Create policies for public access (you may want to restrict this later)
-CREATE POLICY "Enable all operations for all users" ON courses FOR ALL USING (true);
-CREATE POLICY "Enable all operations for all users" ON holes FOR ALL USING (true);
-CREATE POLICY "Enable all operations for all users" ON rounds FOR ALL USING (true);
-CREATE POLICY "Enable all operations for all users" ON hole_scores FOR ALL USING (true);
+-- Create RLS policies for user-specific data
+CREATE POLICY "Users can only access their own courses" ON courses FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can only access holes for their courses" ON holes FOR ALL USING (
+  course_id IN (SELECT id FROM courses WHERE user_id = auth.uid())
+);
+CREATE POLICY "Users can only access rounds for their courses" ON rounds FOR ALL USING (
+  course_id IN (SELECT id FROM courses WHERE user_id = auth.uid())
+);
+CREATE POLICY "Users can only access hole scores for their rounds" ON hole_scores FOR ALL USING (
+  round_id IN (
+    SELECT r.id FROM rounds r 
+    JOIN courses c ON r.course_id = c.id 
+    WHERE c.user_id = auth.uid()
+  )
+);

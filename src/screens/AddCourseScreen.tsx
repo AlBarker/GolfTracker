@@ -5,12 +5,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Hole } from '../types';
 import { BackArrow, Button, Input, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddCourse'>;
 
 export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
   const [courseName, setCourseName] = useState('');
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [holes, setHoles] = useState<Hole[]>(
     Array.from({ length: 18 }, (_, i) => ({
       number: i + 1,
@@ -46,10 +48,16 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
+    if (!user) {
+      Alert.alert('Error', 'User not authenticated');
+      return;
+    }
+
     setSaving(true);
     try {
       const newCourse: Course = {
         id: Date.now().toString(),
+        userId: user.id,
         name: courseName.trim(),
         holes: holes,
         createdAt: new Date(),

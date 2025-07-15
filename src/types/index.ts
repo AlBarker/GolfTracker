@@ -1,5 +1,6 @@
 export interface Course {
   id: string;
+  userId: string;
   name: string;
   holes: Hole[];
   createdAt: Date;
@@ -48,4 +49,6 @@ export type RootStackParamList = {
   RoundEntry: { courseId: string; roundId?: string };
   LiveScoring: { courseId: string };
   RoundDetails: { roundId: string };
+  Login: undefined;
+  SignUp: undefined;
 };

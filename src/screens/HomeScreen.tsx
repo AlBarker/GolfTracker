@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round } from '../types';
 import { Button, Card } from '../components/ui';
 import { storageService } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -19,6 +20,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [recentRounds, setRecentRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     loadData();
@@ -129,10 +131,44 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
     );
   }
 
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to logout');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <ScrollView className="flex-1 bg-background">
       <View className="px-4 py-6" style={{ paddingTop: insets.top + 24 }}>
-        <Text className="text-2xl font-bold text-foreground mb-6">ParPal</Text>
+        <View className="flex-row justify-between items-center mb-6">
+          <Text className="text-2xl font-bold text-foreground">ParPal</Text>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-sm text-muted-foreground">
+              {user?.email}
+            </Text>
+            <Button
+              title="Logout"
+              onPress={handleLogout}
+              variant="outline"
+              size="sm"
+            />
+          </View>
+        </View>
         
         {/* Courses Section */}
         <View className="mb-8">
