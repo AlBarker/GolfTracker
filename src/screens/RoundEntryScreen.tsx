@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Alert, TouchableOpacity, Platform } from 'react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore } from '../types';
-import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui';
+import { BackArrow, Button, Input, Card, Select } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { calculateRoundTotal } from '../utils/stats';
 import { randomUUID } from 'expo-crypto';
@@ -45,6 +45,8 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
             foundCourse.holes.map(hole => ({
               holeNumber: hole.number,
               strokes: hole.par,
+              greenInRegulation: null,
+              upAndDown: null,
             }))
           );
         }
@@ -247,18 +249,42 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
             </View>
 
             <View className="mb-3">
-              <Switch
+              <Select
                 label="Green in Regulation"
-                value={holeScores[index]?.greenInRegulation || false}
-                onValueChange={(value) => updateHoleScore(index, 'greenInRegulation', value)}
+                value={holeScores[index]?.greenInRegulation === null ? '' : holeScores[index]?.greenInRegulation?.toString() || ''}
+                onValueChange={(value) => {
+                  if (value === '') {
+                    updateHoleScore(index, 'greenInRegulation', null);
+                  } else {
+                    updateHoleScore(index, 'greenInRegulation', value === 'true');
+                  }
+                }}
+                options={[
+                  { label: 'Not tracked', value: '' },
+                  { label: 'Yes', value: 'true' },
+                  { label: 'No', value: 'false' },
+                ]}
+                placeholder="Select GIR result"
               />
             </View>
 
             <View>
-              <Switch
+              <Select
                 label="Up and Down"
-                value={holeScores[index]?.upAndDown || false}
-                onValueChange={(value) => updateHoleScore(index, 'upAndDown', value)}
+                value={holeScores[index]?.upAndDown === null ? '' : holeScores[index]?.upAndDown?.toString() || ''}
+                onValueChange={(value) => {
+                  if (value === '') {
+                    updateHoleScore(index, 'upAndDown', null);
+                  } else {
+                    updateHoleScore(index, 'upAndDown', value === 'true');
+                  }
+                }}
+                options={[
+                  { label: 'Not tracked', value: '' },
+                  { label: 'Yes', value: 'true' },
+                  { label: 'No', value: 'false' },
+                ]}
+                placeholder="Select up and down result"
               />
             </View>
           </Card>

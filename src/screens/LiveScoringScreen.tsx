@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore } from '../types';
-import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui';
+import { BackArrow, Button, Input, Card, Select } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { randomUUID } from 'expo-crypto';
 
@@ -18,6 +18,8 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   const [currentScore, setCurrentScore] = useState<HoleScore>({
     holeNumber: 1,
     strokes: 0,
+    greenInRegulation: null,
+    upAndDown: null,
   });
   const [saving, setSaving] = useState(false);
   const [adjustedPars, setAdjustedPars] = useState<number[]>([]);
@@ -67,6 +69,8 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
         setCurrentScore({
           holeNumber: 1,
           strokes: pars[0],
+          greenInRegulation: null,
+          upAndDown: null,
         });
       }
     } catch (error) {
@@ -118,6 +122,8 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
       setCurrentScore({
         holeNumber: nextHoleIndex + 1,
         strokes: getDisplayPar(nextHoleIndex),
+        greenInRegulation: null,
+        upAndDown: null,
       });
     } else {
       finishRound(newHoleScores);
@@ -328,18 +334,42 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
 
           <View className="mb-4">
-            <Switch
+            <Select
               label="Green in Regulation"
-              value={currentScore.greenInRegulation || false}
-              onValueChange={(value) => updateCurrentScore('greenInRegulation', value)}
+              value={currentScore.greenInRegulation === null ? '' : currentScore.greenInRegulation?.toString() || ''}
+              onValueChange={(value) => {
+                if (value === '') {
+                  updateCurrentScore('greenInRegulation', null);
+                } else {
+                  updateCurrentScore('greenInRegulation', value === 'true');
+                }
+              }}
+              options={[
+                { label: 'Not tracked', value: '' },
+                { label: 'Yes', value: 'true' },
+                { label: 'No', value: 'false' },
+              ]}
+              placeholder="Select GIR result"
             />
           </View>
 
           <View>
-            <Switch
+            <Select
               label="Up and Down"
-              value={currentScore.upAndDown || false}
-              onValueChange={(value) => updateCurrentScore('upAndDown', value)}
+              value={currentScore.upAndDown === null ? '' : currentScore.upAndDown?.toString() || ''}
+              onValueChange={(value) => {
+                if (value === '') {
+                  updateCurrentScore('upAndDown', null);
+                } else {
+                  updateCurrentScore('upAndDown', value === 'true');
+                }
+              }}
+              options={[
+                { label: 'Not tracked', value: '' },
+                { label: 'Yes', value: 'true' },
+                { label: 'No', value: 'false' },
+              ]}
+              placeholder="Select up and down result"
             />
           </View>
         </Card>

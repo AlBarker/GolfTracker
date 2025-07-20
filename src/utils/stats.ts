@@ -37,7 +37,7 @@ export const calculateRoundStats = (rounds: Round[], course: Course): RoundStats
     : 0;
 
   const holesWithGIRData = rounds.flatMap(round => 
-    round.holes.filter(hole => hole.greenInRegulation !== undefined)
+    round.holes.filter(hole => hole.greenInRegulation !== undefined && hole.greenInRegulation !== null)
   );
   const girHits = holesWithGIRData.filter(hole => hole.greenInRegulation === true).length;
   const greenInRegulationPercentage = holesWithGIRData.length > 0 
@@ -45,7 +45,7 @@ export const calculateRoundStats = (rounds: Round[], course: Course): RoundStats
     : 0;
 
   const holesWithUpAndDownData = rounds.flatMap(round => 
-    round.holes.filter(hole => hole.upAndDown !== undefined)
+    round.holes.filter(hole => hole.upAndDown !== undefined && hole.upAndDown !== null)
   );
   const upAndDownSuccess = holesWithUpAndDownData.filter(hole => hole.upAndDown === true).length;
   const upAndDownPercentage = holesWithUpAndDownData.length > 0 

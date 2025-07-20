@@ -26,9 +26,9 @@ export interface HoleScore {
   strokes: number;
   putts?: number;
   fairwayHit?: 'hit' | 'left' | 'right';
-  greenInRegulation?: boolean;
+  greenInRegulation?: boolean | null;
   penaltyShots?: number;
-  upAndDown?: boolean;
+  upAndDown?: boolean | null;
 }
 
 export interface RoundStats {
