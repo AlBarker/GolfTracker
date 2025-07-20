@@ -47,7 +47,8 @@ export type RootStackParamList = {
   CourseDetails: { courseId: string };
   AddCourse: undefined;
   RoundEntry: { courseId: string; roundId?: string };
-  LiveScoring: { courseId: string };
+  HandicapEntry: { courseId: string };
+  LiveScoring: { courseId: string; handicap?: number; targetScore?: number };
   RoundDetails: { roundId: string };
   Login: undefined;
   SignUp: undefined;

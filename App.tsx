@@ -10,6 +10,7 @@ import {
   AddCourseScreen,
   CourseDetailsScreen,
   RoundEntryScreen,
+  HandicapEntryScreen,
   LiveScoringScreen,
   RoundDetailsScreen,
   LoginScreen,
@@ -45,6 +46,7 @@ const AuthenticatedApp: React.FC = () => {
             <Stack.Screen name="AddCourse" component={AddCourseScreen} />
             <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
             <Stack.Screen name="RoundEntry" component={RoundEntryScreen} />
+            <Stack.Screen name="HandicapEntry" component={HandicapEntryScreen} />
             <Stack.Screen name="LiveScoring" component={LiveScoringScreen} />
             <Stack.Screen name="RoundDetails" component={RoundDetailsScreen} />
           </>

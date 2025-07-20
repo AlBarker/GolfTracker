@@ -144,7 +144,7 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           />
           <Button
             title="Live Scoring"
-            onPress={() => navigation.navigate('LiveScoring', { courseId })}
+            onPress={() => navigation.navigate('HandicapEntry', { courseId })}
             variant="secondary"
             className="flex-1"
           />

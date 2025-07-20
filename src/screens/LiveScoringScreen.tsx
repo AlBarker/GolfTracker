@@ -10,7 +10,7 @@ import { randomUUID } from 'expo-crypto';
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveScoring'>;
 
 export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { courseId } = route.params;
+  const { courseId, handicap, targetScore } = route.params;
   const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [currentHole, setCurrentHole] = useState(0);
@@ -20,10 +20,36 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     strokes: 0,
   });
   const [saving, setSaving] = useState(false);
+  const [adjustedPars, setAdjustedPars] = useState<number[]>([]);
 
   useEffect(() => {
     loadCourse();
   }, [courseId]);
+
+  const calculateAdjustedPars = (course: Course, handicapValue?: number) => {
+    if (!handicapValue) {
+      return course.holes.map(hole => hole.par);
+    }
+
+    return course.holes.map(hole => {
+      let adjustedPar = hole.par;
+      
+      if (handicapValue > 0) {
+        const strokesOnHole = Math.floor(handicapValue / 18) + 
+          (hole.handicapIndex <= (handicapValue % 18) ? 1 : 0);
+        adjustedPar += strokesOnHole;
+      }
+      
+      return adjustedPar;
+    });
+  };
+
+  const getDisplayPar = (holeIndex: number) => {
+    if (targetScore) {
+      return course?.holes[holeIndex]?.par || 0;
+    }
+    return adjustedPars[holeIndex] || course?.holes[holeIndex]?.par || 0;
+  };
 
   const loadCourse = async () => {
     try {
@@ -32,15 +58,18 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
       setCourse(foundCourse || null);
 
       if (foundCourse) {
+        const pars = calculateAdjustedPars(foundCourse, handicap);
+        setAdjustedPars(pars);
+        
         setHoleScores(
-          foundCourse.holes.map(hole => ({
+          foundCourse.holes.map((hole, index) => ({
             holeNumber: hole.number,
-            strokes: hole.par,
+            strokes: pars[index],
           }))
         );
         setCurrentScore({
           holeNumber: 1,
-          strokes: foundCourse.holes[0].par,
+          strokes: pars[0],
         });
       }
     } catch (error) {
@@ -91,7 +120,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
       setCurrentHole(nextHoleIndex);
       setCurrentScore({
         holeNumber: nextHoleIndex + 1,
-        strokes: course.holes[nextHoleIndex].par,
+        strokes: getDisplayPar(nextHoleIndex),
       });
     } else {
       finishRound(newHoleScores);
@@ -150,7 +179,23 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   const hole = course.holes[currentHole];
+  const displayPar = getDisplayPar(currentHole);
+  const originalPar = hole.par;
   const totalScore = holeScores.slice(0, currentHole).reduce((sum, hole) => sum + hole.strokes, 0) + (currentScore.strokes || 0);
+  
+  const getTotalParContext = () => {
+    if (targetScore) {
+      const completedHoles = currentHole;
+      const averagePar = targetScore / course.holes.length;
+      const expectedScore = Math.round(averagePar * (completedHoles + 1));
+      return { expected: expectedScore, label: `Target: ${targetScore}` };
+    } else {
+      const totalPar = adjustedPars.slice(0, currentHole + 1).reduce((sum, par) => sum + par, 0);
+      return { expected: totalPar, label: `Adjusted Par: ${adjustedPars.reduce((sum, par) => sum + par, 0)}` };
+    }
+  };
+  
+  const { expected: expectedScore, label: totalLabel } = getTotalParContext();
 
   return (
     <View className="flex-1 bg-background">
@@ -168,9 +213,22 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
             <Text className="text-xl font-bold text-card-foreground text-center">
               Score for Hole {hole.number}
             </Text>
-            <Text className="text-muted-foreground">
-              Par {hole.par} • Handicap {hole.handicapIndex}
+            <Text className="text-muted-foreground text-center">
+              {handicap ? (
+                displayPar !== originalPar ? (
+                  <>Par {displayPar} (was {originalPar}) • Handicap {hole.handicapIndex}</>
+                ) : (
+                  <>Par {displayPar} • Handicap {hole.handicapIndex}</>
+                )
+              ) : (
+                <>Par {originalPar} • Handicap {hole.handicapIndex}</>
+              )}
             </Text>
+            {handicap && displayPar !== originalPar && (
+              <Text className="text-xs text-primary text-center mt-1">
+                +{displayPar - originalPar} stroke(s) from handicap
+              </Text>
+            )}
           </View>
           
           <View className="items-center mb-4">
@@ -184,11 +242,11 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
               
               <View className="mx-4">
                 <Text className="text-6xl font-bold text-primary text-center mb-2">
-                  {currentScore.strokes || hole.par}
+                  {currentScore.strokes || displayPar}
                 </Text>
                 <Text className="text-muted-foreground text-center text-sm">
-                  {(currentScore.strokes || hole.par) - hole.par > 0 ? '+' : ''}
-                  {(currentScore.strokes || hole.par) - hole.par} vs Par
+                  {(currentScore.strokes || displayPar) - displayPar > 0 ? '+' : ''}
+                  {(currentScore.strokes || displayPar) - displayPar} vs {handicap ? 'Adjusted Par' : 'Par'}
                 </Text>
               </View>
               
@@ -204,9 +262,9 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
             {/* <View className="w-24 mt-4">
               <Input
                 value={currentScore.strokes?.toString() || ''}
-                onChangeText={(text) => updateCurrentScore('strokes', parseInt(text) || hole.par)}
+                onChangeText={(text) => updateCurrentScore('strokes', parseInt(text) || displayPar)}
                 keyboardType="numeric"
-                placeholder={hole.par.toString()}
+                placeholder={displayPar.toString()}
                 className="text-center text-lg"
               />
             </View> */}
