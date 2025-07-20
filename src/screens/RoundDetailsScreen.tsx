@@ -82,6 +82,8 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     const totalPenalties = round.holes.reduce((sum, hole) => sum + (hole.penaltyShots || 0), 0);
     const fairwaysHit = round.holes.filter(hole => hole.fairwayHit === 'hit').length;
     const fairwaysTracked = round.holes.filter(hole => hole.fairwayHit).length;
+    const fairwaysMissedLeft = round.holes.filter(hole => hole.fairwayHit === 'left').length;
+    const fairwaysMissedRight = round.holes.filter(hole => hole.fairwayHit === 'right').length;
     const girsHit = round.holes.filter(hole => hole.greenInRegulation).length;
     const upAndDowns = round.holes.filter(hole => hole.upAndDown).length;
     const coursePar = course.holes.reduce((sum, hole) => sum + hole.par, 0);
@@ -90,6 +92,8 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
       totalPutts,
       totalPenalties,
       fairwayPercentage: fairwaysTracked > 0 ? (fairwaysHit / fairwaysTracked) * 100 : 0,
+      fairwayMissedLeftPercentage: fairwaysTracked > 0 ? (fairwaysMissedLeft / fairwaysTracked) * 100 : 0,
+      fairwayMissedRightPercentage: fairwaysTracked > 0 ? (fairwaysMissedRight / fairwaysTracked) * 100 : 0,
       girPercentage: (girsHit / course.holes.length) * 100,
       upAndDownPercentage: upAndDowns > 0 ? (upAndDowns / round.holes.length) * 100 : 0,
       coursePar,
@@ -326,10 +330,19 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                 </View>
               )}
 
-              {stats.fairwayPercentage > 0 && (
-                <View className="flex-row justify-between">
-                  <Text className="text-muted-foreground">Fairways Hit:</Text>
-                  <Text className="font-semibold text-card-foreground">{stats.fairwayPercentage.toFixed(1)}%</Text>
+              {(stats.fairwayPercentage > 0 || stats.fairwayMissedLeftPercentage > 0 || stats.fairwayMissedRightPercentage > 0) && (
+                <View>
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-muted-foreground">Fairways Hit:</Text>
+                    <Text className="font-semibold text-card-foreground">{stats.fairwayPercentage.toFixed(1)}%</Text>
+                  </View>
+                  {(stats.fairwayMissedLeftPercentage > 0 || stats.fairwayMissedRightPercentage > 0) && (
+                    <View className="flex-row justify-between ml-4">
+                      <Text className="text-xs text-muted-foreground">
+                        Missed Left: {stats.fairwayMissedLeftPercentage.toFixed(1)}% • Missed Right: {stats.fairwayMissedRightPercentage.toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
 

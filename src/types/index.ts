@@ -38,6 +38,8 @@ export interface RoundStats {
   worstScore: number;
   averagePutts: number;
   fairwayHitPercentage: number;
+  fairwayMissedLeftPercentage: number;
+  fairwayMissedRightPercentage: number;
   greenInRegulationPercentage: number;
   upAndDownPercentage: number;
 }

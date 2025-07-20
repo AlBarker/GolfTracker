@@ -176,10 +176,19 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                   <Text className="font-semibold text-card-foreground">{stats.averagePutts.toFixed(1)}</Text>
                 </View>
               )}
-              {stats.fairwayHitPercentage > 0 && (
-                <View className="flex-row justify-between">
-                  <Text className="text-muted-foreground">Fairway Hit %:</Text>
-                  <Text className="font-semibold text-card-foreground">{stats.fairwayHitPercentage.toFixed(1)}%</Text>
+              {(stats.fairwayHitPercentage > 0 || stats.fairwayMissedLeftPercentage > 0 || stats.fairwayMissedRightPercentage > 0) && (
+                <View>
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-muted-foreground">Fairway Hit %:</Text>
+                    <Text className="font-semibold text-card-foreground">{stats.fairwayHitPercentage.toFixed(1)}%</Text>
+                  </View>
+                  {(stats.fairwayMissedLeftPercentage > 0 || stats.fairwayMissedRightPercentage > 0) && (
+                    <View className="flex-row justify-between ml-4">
+                      <Text className="text-xs text-muted-foreground">
+                        Missed Left: {stats.fairwayMissedLeftPercentage.toFixed(1)}% • Missed Right: {stats.fairwayMissedRightPercentage.toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
               {stats.greenInRegulationPercentage > 0 && (

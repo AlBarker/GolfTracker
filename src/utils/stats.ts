@@ -10,6 +10,8 @@ export const calculateRoundStats = (rounds: Round[], course: Course): RoundStats
       worstScore: 0,
       averagePutts: 0,
       fairwayHitPercentage: 0,
+      fairwayMissedLeftPercentage: 0,
+      fairwayMissedRightPercentage: 0,
       greenInRegulationPercentage: 0,
       upAndDownPercentage: 0,
     };
@@ -32,8 +34,17 @@ export const calculateRoundStats = (rounds: Round[], course: Course): RoundStats
     round.holes.filter(hole => hole.fairwayHit !== undefined)
   );
   const fairwayHits = holesWithFairwayData.filter(hole => hole.fairwayHit === 'hit').length;
+  const fairwayMissedLeft = holesWithFairwayData.filter(hole => hole.fairwayHit === 'left').length;
+  const fairwayMissedRight = holesWithFairwayData.filter(hole => hole.fairwayHit === 'right').length;
+  
   const fairwayHitPercentage = holesWithFairwayData.length > 0 
     ? (fairwayHits / holesWithFairwayData.length) * 100 
+    : 0;
+  const fairwayMissedLeftPercentage = holesWithFairwayData.length > 0 
+    ? (fairwayMissedLeft / holesWithFairwayData.length) * 100 
+    : 0;
+  const fairwayMissedRightPercentage = holesWithFairwayData.length > 0 
+    ? (fairwayMissedRight / holesWithFairwayData.length) * 100 
     : 0;
 
   const holesWithGIRData = rounds.flatMap(round => 
@@ -59,6 +70,8 @@ export const calculateRoundStats = (rounds: Round[], course: Course): RoundStats
     worstScore,
     averagePutts,
     fairwayHitPercentage,
+    fairwayMissedLeftPercentage,
+    fairwayMissedRightPercentage,
     greenInRegulationPercentage,
     upAndDownPercentage,
   };
@@ -89,6 +102,8 @@ export const getRoundStatistics = async (courseId?: string): Promise<RoundStats>
       worstScore: 0,
       averagePutts: 0,
       fairwayHitPercentage: 0,
+      fairwayMissedLeftPercentage: 0,
+      fairwayMissedRightPercentage: 0,
       greenInRegulationPercentage: 0,
       upAndDownPercentage: 0,
     };
