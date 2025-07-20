@@ -72,7 +72,10 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
         Alert.alert('Invalid Target', 'Please enter a valid target score');
         return;
       }
-      navigation.navigate('LiveScoring', { courseId, targetScore: targetValue });
+      // Calculate effective handicap from target score
+      const totalPar = course?.holes.reduce((sum, hole) => sum + hole.par, 0) || 72;
+      const effectiveHandicap = Math.max(0, targetValue - totalPar);
+      navigation.navigate('LiveScoring', { courseId, handicap: effectiveHandicap, targetScore: targetValue });
     }
   };
 
@@ -154,9 +157,29 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
               placeholder="Enter your target score"
               className="mb-4"
             />
-            <Text className="text-sm text-muted-foreground">
-              Set a target score for your round. The display will show how you're tracking against this target rather than course par.
+            <Text className="text-sm text-muted-foreground mb-4">
+              Set a target score for your round. This will be converted to an effective handicap and applied to each hole.
             </Text>
+            
+            {(() => {
+              const targetValue = parseInt(targetScore);
+              if (!isNaN(targetValue) && targetValue > totalPar) {
+                const effectiveHandicap = targetValue - totalPar;
+                const adjustments = calculateParAdjustments(effectiveHandicap, totalPar);
+                const adjustedTotalPar = adjustments.reduce((sum, adj) => sum + adj.adjustedPar, 0);
+                return (
+                  <View>
+                    <Text className="text-sm font-medium text-card-foreground mb-2">
+                      Effective Handicap: {effectiveHandicap} • Adjusted Course Par: {adjustedTotalPar}
+                    </Text>
+                    <Text className="text-xs text-muted-foreground">
+                      Your target of {targetValue} is {effectiveHandicap} over par, so you'll receive strokes accordingly.
+                    </Text>
+                  </View>
+                );
+              }
+              return null;
+            })()}
           </Card>
         )}
 

@@ -45,9 +45,6 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const getDisplayPar = (holeIndex: number) => {
-    if (targetScore) {
-      return course?.holes[holeIndex]?.par || 0;
-    }
     return adjustedPars[holeIndex] || course?.holes[holeIndex]?.par || 0;
   };
 
@@ -184,14 +181,13 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   const totalScore = holeScores.slice(0, currentHole).reduce((sum, hole) => sum + hole.strokes, 0) + (currentScore.strokes || 0);
   
   const getTotalParContext = () => {
+    const totalPar = adjustedPars.slice(0, currentHole + 1).reduce((sum, par) => sum + par, 0);
+    const totalAdjustedPar = adjustedPars.reduce((sum, par) => sum + par, 0);
+    
     if (targetScore) {
-      const completedHoles = currentHole;
-      const averagePar = targetScore / course.holes.length;
-      const expectedScore = Math.round(averagePar * (completedHoles + 1));
-      return { expected: expectedScore, label: `Target: ${targetScore}` };
+      return { expected: totalPar, label: `Target: ${targetScore} (Adjusted Par: ${totalAdjustedPar})` };
     } else {
-      const totalPar = adjustedPars.slice(0, currentHole + 1).reduce((sum, par) => sum + par, 0);
-      return { expected: totalPar, label: `Adjusted Par: ${adjustedPars.reduce((sum, par) => sum + par, 0)}` };
+      return { expected: totalPar, label: `Adjusted Par: ${totalAdjustedPar}` };
     }
   };
   
@@ -226,7 +222,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
             </Text>
             {handicap && displayPar !== originalPar && (
               <Text className="text-xs text-primary text-center mt-1">
-                +{displayPar - originalPar} stroke(s) from handicap
+                +{displayPar - originalPar} stroke(s) from {targetScore ? `target score (${targetScore})` : 'handicap'}
               </Text>
             )}
           </View>
