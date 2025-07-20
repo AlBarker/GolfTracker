@@ -223,7 +223,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
               <View className="flex-row items-center">
                 <TouchableOpacity
                   onPress={decrementCurrentPutts}
-                  className="bg-secondary rounded-lg w-10 h-10 items-center justify-center mr-2"
+                  className="bg-secondary rounded w-10 h-10 items-center justify-center mr-2"
                 >
                   <Text className="text-secondary-foreground font-bold text-lg">-</Text>
                 </TouchableOpacity>
@@ -240,7 +240,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
                 
                 <TouchableOpacity
                   onPress={incrementCurrentPutts}
-                  className="bg-secondary rounded-lg w-10 h-10 items-center justify-center ml-2"
+                  className="bg-secondary rounded w-10 h-10 items-center justify-center ml-2"
                 >
                   <Text className="text-secondary-foreground font-bold text-lg">+</Text>
                 </TouchableOpacity>

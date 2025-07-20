@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore } from '../types';
@@ -7,6 +7,7 @@ import { BackArrow, Button, Input, Card, Select, Switch } from '../components/ui
 import { storageService } from '../utils/storage';
 import { calculateRoundTotal } from '../utils/stats';
 import { randomUUID } from 'expo-crypto';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoundEntry'>;
 
@@ -15,7 +16,8 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [round, setRound] = useState<Round | null>(null);
-  const [datePlayed, setDatePlayed] = useState(new Date().toISOString().split('T')[0]);
+  const [datePlayed, setDatePlayed] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [holeScores, setHoleScores] = useState<HoleScore[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -35,7 +37,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
           const foundRound = rounds.find(r => r.id === roundId);
           if (foundRound) {
             setRound(foundRound);
-            setDatePlayed(foundRound.datePlayed.toISOString().split('T')[0]);
+            setDatePlayed(foundRound.datePlayed);
             setHoleScores(foundRound.holes);
           }
         } else {
@@ -82,6 +84,12 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || datePlayed;
+    setShowDatePicker(Platform.OS === 'ios');
+    setDatePlayed(currentDate);
+  };
+
   const saveRound = async () => {
     if (!course) return;
 
@@ -96,7 +104,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
       const roundData: Round = {
         id: roundId || randomUUID(),
         courseId,
-        datePlayed: new Date(datePlayed),
+        datePlayed: datePlayed,
         holes: holeScores,
         totalScore: totalStrokes,
         createdAt: round?.createdAt || new Date(),
@@ -131,12 +139,17 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
         <Text className="text-muted-foreground mb-6">{course.name}</Text>
 
-        <Input
-          label="Date Played"
-          value={datePlayed}
-          onChangeText={setDatePlayed}
-          placeholder="YYYY-MM-DD"
-        />
+        <View className="mb-4">
+          <Text className="text-foreground font-medium mb-2">Date Played</Text>
+          <DateTimePicker
+            testID="dateTimePicker"
+            value={datePlayed}
+            mode="date"
+            is24Hour={true}
+            display="default"
+            onChange={onDateChange}
+          />
+        </View>
 
         <Text className="text-lg font-semibold text-foreground mb-4">Hole Scores</Text>
 
@@ -152,7 +165,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View className="flex-row items-center">
                   <TouchableOpacity
                     onPress={() => decrementScore(index)}
-                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center mr-2"
+                    className="bg-secondary rounded w-10 h-10 items-center justify-center mr-2"
                   >
                     <Text className="text-secondary-foreground font-bold text-lg">-</Text>
                   </TouchableOpacity>
@@ -169,7 +182,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
                   
                   <TouchableOpacity
                     onPress={() => incrementScore(index)}
-                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center ml-2"
+                    className="bg-secondary rounded w-10 h-10 items-center justify-center ml-2"
                   >
                     <Text className="text-secondary-foreground font-bold text-lg">+</Text>
                   </TouchableOpacity>
@@ -181,7 +194,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
                 <View className="flex-row items-center">
                   <TouchableOpacity
                     onPress={() => decrementPutts(index)}
-                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center mr-2"
+                    className="bg-secondary rounded w-10 h-10 items-center justify-center mr-2"
                   >
                     <Text className="text-secondary-foreground font-bold text-lg">-</Text>
                   </TouchableOpacity>
@@ -198,7 +211,7 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
                   
                   <TouchableOpacity
                     onPress={() => incrementPutts(index)}
-                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center ml-2"
+                    className="bg-secondary rounded w-10 h-10 items-center justify-center ml-2"
                   >
                     <Text className="text-secondary-foreground font-bold text-lg">+</Text>
                   </TouchableOpacity>

@@ -39,7 +39,7 @@ export const Select: React.FC<SelectProps> = ({
       )}
       
       <TouchableOpacity
-        className="border border-border rounded-lg px-3 py-3 bg-background"
+        className="border border-border rounded px-3 py-3 bg-background"
         onPress={() => setIsOpen(true)}
       >
         <Text className={selectedOption ? 'text-foreground' : 'text-muted-foreground'}>
@@ -58,7 +58,7 @@ export const Select: React.FC<SelectProps> = ({
           activeOpacity={1}
           onPress={() => setIsOpen(false)}
         >
-          <View className="bg-popover rounded-lg mx-4 w-80 max-h-64 shadow-lg">
+          <View className="bg-popover rounded mx-4 w-80 max-h-64 shadow-lg">
             <FlatList
               data={options}
               keyExtractor={(item) => item.value}

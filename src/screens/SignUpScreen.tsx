@@ -68,7 +68,7 @@ export const SignUpScreen: React.FC = () => {
       className="flex-1 bg-gray-50"
     >
       <View className="flex-1 justify-center px-6">
-        <View className="bg-white rounded-lg shadow-md p-6">
+        <View className="bg-white rounded shadow-md p-6">
           <Text className="text-3xl font-bold text-center text-gray-800 mb-8">
             Create Account
           </Text>
@@ -77,7 +77,7 @@ export const SignUpScreen: React.FC = () => {
             <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
               <TextInput
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded focus:border-primary focus:outline-none"
                 placeholder="Enter your email"
                 value={email}
                 onChangeText={setEmail}
@@ -90,7 +90,7 @@ export const SignUpScreen: React.FC = () => {
             <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">Password</Text>
               <TextInput
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded focus:border-primary focus:outline-none"
                 placeholder="Enter your password"
                 value={password}
                 onChangeText={setPassword}
@@ -102,7 +102,7 @@ export const SignUpScreen: React.FC = () => {
             <View className="mb-4">
               <Text className="text-sm font-medium text-gray-700 mb-2">Confirm Password</Text>
               <TextInput
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded focus:border-primary focus:outline-none"
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -130,7 +130,7 @@ export const SignUpScreen: React.FC = () => {
                   <TouchableOpacity
                     onPress={handleAppleSignIn}
                     disabled={loading}
-                    className="w-full flex-row items-center justify-center px-4 py-3 border border-gray-300 rounded-lg bg-black disabled:opacity-50"
+                    className="w-full flex-row items-center justify-center px-4 py-3 border border-gray-300 rounded bg-black disabled:opacity-50"
                   >
                     <Text className="ml-2 text-white font-medium">Continue with Apple</Text>
                   </TouchableOpacity>

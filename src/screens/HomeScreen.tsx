@@ -169,7 +169,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
             
             {showDropdown && (
-              <View className="absolute top-12 right-0 bg-card rounded-lg shadow-lg border border-border p-1 min-w-[150px] z-50">
+              <View className="absolute top-12 right-0 bg-card rounded shadow-lg border border-border p-1 min-w-[150px] z-50">
                 <View className="px-3 py-2 border-b border-border">
                   <Text className="text-xs text-muted-foreground">Signed in as</Text>
                   <Text className="text-sm font-medium text-foreground">{user?.email}</Text>

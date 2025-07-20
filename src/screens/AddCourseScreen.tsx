@@ -103,7 +103,7 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
                 <View className="flex-row items-center">
                   <TouchableOpacity
                     onPress={() => decrementPar(index)}
-                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center mr-2"
+                    className="bg-secondary rounded w-10 h-10 items-center justify-center mr-2"
                   >
                     <Text className="text-secondary-foreground font-bold text-lg">-</Text>
                   </TouchableOpacity>
@@ -120,7 +120,7 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
                   
                   <TouchableOpacity
                     onPress={() => incrementPar(index)}
-                    className="bg-secondary rounded-lg w-10 h-10 items-center justify-center ml-2"
+                    className="bg-secondary rounded w-10 h-10 items-center justify-center ml-2"
                   >
                     <Text className="text-secondary-foreground font-bold text-lg">+</Text>
                   </TouchableOpacity>
@@ -130,7 +130,6 @@ export const AddCourseScreen: React.FC<Props> = ({ navigation }) => {
               <View className="flex-1">
                 <Input
                   label="Handicap Index"
-                  value={hole.handicapIndex.toString()}
                   onChangeText={(text) => updateHole(index, 'handicapIndex', parseInt(text) || 1)}
                   keyboardType="numeric"
                   placeholder="Handicap"
