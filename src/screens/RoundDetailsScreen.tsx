@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [round, setRound] = useState<Round | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadRoundData();
@@ -42,6 +43,40 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteRound = () => {
+    Alert.alert(
+      'Delete Round',
+      'Are you sure you want to delete this round? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await storageService.deleteRound(roundId);
+              Alert.alert('Success', 'Round deleted successfully', [
+                {
+                  text: 'OK',
+                  onPress: () => navigation.goBack(),
+                },
+              ]);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete round');
+              console.error('Error deleting round:', error);
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatDate = (date: Date) => {
@@ -149,13 +184,22 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Edit Button */}
-        <Button
-          title="Edit Round"
-          variant="outline"
-          onPress={() => navigation.navigate('RoundEntry', { courseId: course.id, roundId: round.id })}
-          className="mb-6"
-        />
+        {/* Action Buttons */}
+        <View className="flex-row gap-4 mb-6">
+          <Button
+            title="Edit Round"
+            variant="outline"
+            onPress={() => navigation.navigate('RoundEntry', { courseId: course.id, roundId: round.id })}
+            className="flex-1"
+          />
+          <Button
+            title={deleting ? "Deleting..." : "Delete Round"}
+            variant="destructive"
+            onPress={handleDeleteRound}
+            disabled={deleting}
+            className="flex-1"
+          />
+        </View>
 
         {/* Scorecard */}
         <Card className="mb-6">

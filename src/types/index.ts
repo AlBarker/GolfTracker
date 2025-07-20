@@ -19,6 +19,7 @@ export interface Round {
   holes: HoleScore[];
   totalScore: number;
   createdAt: Date;
+  deletedAt?: Date;
 }
 
 export interface HoleScore {

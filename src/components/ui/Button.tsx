@@ -3,7 +3,7 @@ import { TouchableOpacity, Text, TouchableOpacityProps } from 'react-native';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -24,12 +24,14 @@ export const Button: React.FC<ButtonProps> = ({
     primary: 'bg-primary active:bg-primary/90',
     secondary: 'bg-secondary active:bg-secondary/90',
     outline: 'border-2 border-primary active:bg-primary/10',
+    destructive: 'bg-red-600 active:bg-red-700',
   };
 
   const textClasses = {
     primary: 'text-primary-foreground font-semibold',
     secondary: 'text-secondary-foreground font-semibold',
     outline: 'text-primary font-semibold',
+    destructive: 'text-white font-semibold',
   };
 
   return (

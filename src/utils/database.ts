@@ -149,7 +149,8 @@ export class DatabaseService {
         course_id: round.courseId,
         date_played: round.datePlayed.toISOString(),
         total_score: round.totalScore,
-        created_at: round.createdAt.toISOString()
+        created_at: round.createdAt.toISOString(),
+        deleted_at: round.deletedAt?.toISOString() || null
       });
 
     if (roundError) {
@@ -190,7 +191,8 @@ export class DatabaseService {
   async getRounds(courseId?: string): Promise<Round[]> {
     let query = supabase
       .from('rounds')
-      .select('id, course_id, date_played, total_score, created_at')
+      .select('id, course_id, date_played, total_score, created_at, deleted_at')
+      .is('deleted_at', null)
       .order('date_played', { ascending: false });
 
     if (courseId) {
@@ -231,7 +233,8 @@ export class DatabaseService {
         datePlayed: new Date(roundRow.date_played),
         holes,
         totalScore: roundRow.total_score,
-        createdAt: new Date(roundRow.created_at)
+        createdAt: new Date(roundRow.created_at),
+        deletedAt: roundRow.deleted_at ? new Date(roundRow.deleted_at) : undefined
       });
     }
 
@@ -241,8 +244,9 @@ export class DatabaseService {
   async getRound(id: string): Promise<Round | null> {
     const { data: roundData, error: roundError } = await supabase
       .from('rounds')
-      .select('id, course_id, date_played, total_score, created_at')
+      .select('id, course_id, date_played, total_score, created_at, deleted_at')
       .eq('id', id)
+      .is('deleted_at', null)
       .single();
 
     if (roundError) {
@@ -278,14 +282,15 @@ export class DatabaseService {
       datePlayed: new Date(roundData.date_played),
       holes,
       totalScore: roundData.total_score,
-      createdAt: new Date(roundData.created_at)
+      createdAt: new Date(roundData.created_at),
+      deletedAt: roundData.deleted_at ? new Date(roundData.deleted_at) : undefined
     };
   }
 
   async deleteRound(id: string): Promise<void> {
     const { error } = await supabase
       .from('rounds')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {

@@ -43,5 +43,23 @@ export const storageService = {
       console.error('Error loading rounds for course:', error);
       return [];
     }
+  },
+
+  async getRound(roundId: string): Promise<Round | null> {
+    try {
+      return await databaseService.getRound(roundId);
+    } catch (error) {
+      console.error('Error loading round:', error);
+      return null;
+    }
+  },
+
+  async deleteRound(roundId: string): Promise<void> {
+    try {
+      await databaseService.deleteRound(roundId);
+    } catch (error) {
+      console.error('Error deleting round:', error);
+      throw error;
+    }
   }
 };
