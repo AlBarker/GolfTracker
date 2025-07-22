@@ -48,7 +48,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             height: spinnerSize,
             borderWidth: 3,
             borderColor: '#6b7280', // muted-foreground equivalent
-            borderTopColor: '#2E7D32r', // primary equivalent  
+            borderTopColor: '#2E7D32', // primary equivalent  
             borderRadius: spinnerSize / 2,
             marginBottom: 16,
             transform: [{ rotate: spin }],

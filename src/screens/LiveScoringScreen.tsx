@@ -25,10 +25,20 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   const [adjustedPars, setAdjustedPars] = useState<number[]>([]);
   const [holeSelection, setHoleSelection] = useState<HoleSelection>(initialHoleSelection || '18holes');
   const [filteredHoles, setFilteredHoles] = useState<any[]>([]);
+  const [editingNotes, setEditingNotes] = useState('');
+  const [notesChanged, setNotesChanged] = useState(false);
 
   useEffect(() => {
     loadCourse();
   }, [courseId]);
+
+  useEffect(() => {
+    // Update notes when hole changes
+    if (filteredHoles[currentHole]) {
+      setEditingNotes(filteredHoles[currentHole].notes || '');
+      setNotesChanged(false);
+    }
+  }, [currentHole, filteredHoles]);
 
   const getFilteredHoles = (holes: any[], selection: HoleSelection) => {
     switch (selection) {
@@ -126,11 +136,38 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  const nextHole = () => {
+  const handleNotesChange = (text: string) => {
+    setEditingNotes(text);
+    setNotesChanged(text !== (filteredHoles[currentHole]?.notes || ''));
+  };
+
+  const saveCurrentHoleNotes = async () => {
+    if (!course || !filteredHoles[currentHole] || !notesChanged) return;
+    
+    try {
+      await storageService.updateHoleNotes(course.id, filteredHoles[currentHole].number, editingNotes);
+      
+      // Update local filtered holes
+      setFilteredHoles(prev => {
+        const newHoles = [...prev];
+        newHoles[currentHole] = { ...newHoles[currentHole], notes: editingNotes || undefined };
+        return newHoles;
+      });
+      
+      setNotesChanged(false);
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    }
+  };
+
+  const nextHole = async () => {
     if (!course || !currentScore.strokes || currentScore.strokes < 1) {
       Alert.alert('Error', 'Please enter a valid score for this hole');
       return;
     }
+
+    // Save notes if changed
+    await saveCurrentHoleNotes();
 
     const newHoleScores = [...holeScores];
     newHoleScores[currentHole] = currentScore;
@@ -150,8 +187,11 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
-  const previousHole = () => {
+  const previousHole = async () => {
     if (currentHole > 0) {
+      // Save notes if changed
+      await saveCurrentHoleNotes();
+      
       const prevHoleIndex = currentHole - 1;
       setCurrentHole(prevHoleIndex);
       setCurrentScore(holeScores[prevHoleIndex]);
@@ -294,6 +334,33 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
               />
             </View> */}
           </View>
+        </Card>
+
+
+        {/* Hole Notes */}
+        <Card className="mb-6">
+          <Text className="text-lg font-semibold text-card-foreground mb-3">Hole Notes</Text>
+          <Input
+            value={editingNotes}
+            onChangeText={handleNotesChange}
+            placeholder={`Add notes for hole ${hole.number}...`}
+            multiline
+            numberOfLines={3}
+            className="min-h-[75px]"
+          />
+          {notesChanged && (
+            <View className="flex-row justify-end mt-2">
+              <Button
+                title="Save Notes"
+                onPress={saveCurrentHoleNotes}
+                variant="outline"
+                className="py-1 px-3"
+              />
+            </View>
+          )}
+          <Text className="text-xs text-muted-foreground mt-2">
+            Notes are automatically saved when you move to the next hole
+          </Text>
         </Card>
 
         {/* Additional Stats - Separated and Less Prominent */}

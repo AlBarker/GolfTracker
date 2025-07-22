@@ -1,0 +1,2 @@
+  ALTER TABLE holes
+  ADD COLUMN notes TEXT;

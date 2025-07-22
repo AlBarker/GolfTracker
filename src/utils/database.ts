@@ -37,7 +37,8 @@ export class DatabaseService {
       course_id: course.id,
       number: hole.number,
       par: hole.par,
-      handicap_index: hole.handicapIndex
+      handicap_index: hole.handicapIndex,
+      notes: hole.notes || null
     }));
 
     const { error: holesError } = await supabase
@@ -63,7 +64,7 @@ export class DatabaseService {
     for (const courseRow of coursesData || []) {
       const { data: holesData, error: holesError } = await supabase
         .from('holes')
-        .select('number, par, handicap_index')
+        .select('number, par, handicap_index, notes')
         .eq('course_id', courseRow.id)
         .order('number');
 
@@ -74,7 +75,8 @@ export class DatabaseService {
       const holes: Hole[] = (holesData || []).map(hole => ({
         number: hole.number,
         par: hole.par,
-        handicapIndex: hole.handicap_index
+        handicapIndex: hole.handicap_index,
+        notes: hole.notes || undefined
       }));
 
       courses.push({
@@ -105,7 +107,7 @@ export class DatabaseService {
 
     const { data: holesData, error: holesError } = await supabase
       .from('holes')
-      .select('number, par, handicap_index')
+      .select('number, par, handicap_index, notes')
       .eq('course_id', id)
       .order('number');
 
@@ -116,7 +118,8 @@ export class DatabaseService {
     const holes: Hole[] = (holesData || []).map(hole => ({
       number: hole.number,
       par: hole.par,
-      handicapIndex: hole.handicap_index
+      handicapIndex: hole.handicap_index,
+      notes: hole.notes || undefined
     }));
 
     return {
@@ -301,6 +304,19 @@ export class DatabaseService {
   // Get all rounds for statistics
   async getAllRounds(): Promise<Round[]> {
     return this.getRounds();
+  }
+
+  // Hole notes operations
+  async updateHoleNotes(courseId: string, holeNumber: number, notes: string): Promise<void> {
+    const { error } = await supabase
+      .from('holes')
+      .update({ notes: notes || null })
+      .eq('course_id', courseId)
+      .eq('number', holeNumber);
+
+    if (error) {
+      throw new Error(`Failed to update hole notes: ${error.message}`);
+    }
   }
 }
 

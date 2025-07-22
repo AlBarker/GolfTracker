@@ -61,5 +61,14 @@ export const storageService = {
       console.error('Error deleting round:', error);
       throw error;
     }
+  },
+
+  async updateHoleNotes(courseId: string, holeNumber: number, notes: string): Promise<void> {
+    try {
+      await databaseService.updateHoleNotes(courseId, holeNumber, notes);
+    } catch (error) {
+      console.error('Error updating hole notes:', error);
+      throw error;
+    }
   }
 };

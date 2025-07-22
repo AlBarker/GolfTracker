@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, RoundStats } from '../types';
-import { BackArrow, Button, Card, LoadingSpinner } from '../components/ui';
+import { BackArrow, Button, Card, LoadingSpinner, Input } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { calculateRoundStats } from '../utils/stats';
 
@@ -17,6 +17,8 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [stats, setStats] = useState<RoundStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingNotes, setEditingNotes] = useState<{[holeNumber: number]: string}>({});
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     loadCourseData();
@@ -85,6 +87,51 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     if (diff <= 1.5) return 'text-yellow-600'; // Slightly over par
     if (diff <= 2.5) return 'text-orange-600'; // Well over par
     return 'text-red-600'; // Much over par
+  };
+
+  const handleNotesChange = (holeNumber: number, notes: string) => {
+    setEditingNotes(prev => ({
+      ...prev,
+      [holeNumber]: notes
+    }));
+  };
+
+  const saveHoleNotes = async (holeNumber: number) => {
+    if (!course) return;
+    
+    const notes = editingNotes[holeNumber] || '';
+    setSavingNotes(true);
+    
+    try {
+      await storageService.updateHoleNotes(course.id, holeNumber, notes);
+      
+      // Update local course state
+      setCourse(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          holes: prev.holes.map(hole => 
+            hole.number === holeNumber 
+              ? { ...hole, notes: notes || undefined }
+              : hole
+          )
+        };
+      });
+      
+      // Clear editing state for this hole
+      setEditingNotes(prev => {
+        const newState = { ...prev };
+        delete newState[holeNumber];
+        return newState;
+      });
+      
+      Alert.alert('Success', `Notes saved for hole ${holeNumber}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save notes');
+      console.error('Error saving notes:', error);
+    } finally {
+      setSavingNotes(false);
+    }
   };
 
   const renderRoundItem = ({ item }: { item: Round }) => (
@@ -391,6 +438,44 @@ export const CourseDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
             scrollEnabled={false}
           />
         )}
+
+          <Text className="text-lg font-semibold text-card-foreground mb-2 mt-8">Hole Notes</Text>
+          <Text className="text-sm text-muted-foreground mb-4">
+            Add personal notes for each hole to remember key strategies, hazards, or tips.
+          </Text>
+          
+          {course?.holes.map((hole) => (
+            <View key={hole.number} className="mb-4 p-3 border border-border rounded">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="font-semibold text-card-foreground">
+                  Hole {hole.number} • Par {hole.par}
+                </Text>
+                {editingNotes[hole.number] !== undefined && (
+                  <Button
+                    title={savingNotes ? "Saving..." : "Save"}
+                    onPress={() => saveHoleNotes(hole.number)}
+                    disabled={savingNotes}
+                    className="py-1 px-3"
+                  />
+                )}
+              </View>
+              
+              <Input
+                value={editingNotes[hole.number] !== undefined ? editingNotes[hole.number] : (hole.notes || '')}
+                onChangeText={(text) => handleNotesChange(hole.number, text)}
+                placeholder={`Add notes for hole ${hole.number}...`}
+                multiline
+                numberOfLines={2}
+                className="min-h-[60px]"
+              />
+              
+              {hole.notes && editingNotes[hole.number] === undefined && (
+                <Text className="text-xs text-muted-foreground mt-2">
+                  Tap to edit notes
+                </Text>
+              )}
+            </View>
+          ))}
       </View>
     </ScrollView>
   );

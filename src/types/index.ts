@@ -10,6 +10,7 @@ export interface Hole {
   number: number;
   par: number;
   handicapIndex: number;
+  notes?: string;
 }
 
 export interface Round {
