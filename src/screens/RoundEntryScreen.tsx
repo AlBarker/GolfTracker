@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Course, Round, HoleScore } from '../types';
+import { RootStackParamList, Course, Round, HoleScore, HoleSelection } from '../types';
 import { BackArrow, Button, Input, Card, Select } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { calculateRoundTotal } from '../utils/stats';
@@ -12,7 +12,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 type Props = NativeStackScreenProps<RootStackParamList, 'RoundEntry'>;
 
 export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { courseId, roundId } = route.params;
+  const { courseId, roundId, holeSelection: initialHoleSelection } = route.params;
   const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [round, setRound] = useState<Round | null>(null);
@@ -20,10 +20,23 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [holeScores, setHoleScores] = useState<HoleScore[]>([]);
   const [saving, setSaving] = useState(false);
+  const [holeSelection, setHoleSelection] = useState<HoleSelection>(initialHoleSelection || '18holes');
 
   useEffect(() => {
     loadData();
   }, [courseId, roundId]);
+
+  const getFilteredHoles = (holes: any[], selection: HoleSelection) => {
+    switch (selection) {
+      case 'front9':
+        return holes.filter(hole => hole.number >= 1 && hole.number <= 9);
+      case 'back9':
+        return holes.filter(hole => hole.number >= 10 && hole.number <= 18);
+      case '18holes':
+      default:
+        return holes;
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -41,8 +54,9 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
             setHoleScores(foundRound.holes);
           }
         } else {
+          const filteredHoles = getFilteredHoles(foundCourse.holes, holeSelection);
           setHoleScores(
-            foundCourse.holes.map(hole => ({
+            filteredHoles.map(hole => ({
               holeNumber: hole.number,
               strokes: hole.par,
               greenInRegulation: null,
@@ -153,9 +167,36 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
           />
         </View>
 
+        <View className="mb-4">
+          <Select
+            label="Holes to Play"
+            value={holeSelection}
+            onValueChange={(value) => {
+              const newSelection = value as HoleSelection;
+              setHoleSelection(newSelection);
+              if (course) {
+                const filteredHoles = getFilteredHoles(course.holes, newSelection);
+                setHoleScores(
+                  filteredHoles.map(hole => ({
+                    holeNumber: hole.number,
+                    strokes: hole.par,
+                    greenInRegulation: null,
+                    upAndDown: null,
+                  }))
+                );
+              }
+            }}
+            options={[
+              { label: '18 Holes', value: '18holes' },
+              { label: 'Front 9', value: 'front9' },
+              { label: 'Back 9', value: 'back9' },
+            ]}
+          />
+        </View>
+
         <Text className="text-lg font-semibold text-foreground mb-4">Hole Scores</Text>
 
-        {course.holes.map((hole, index) => (
+        {getFilteredHoles(course.holes, holeSelection).map((hole, index) => (
           <Card key={hole.number} className="mb-4">
             <Text className="text-md font-semibold text-card-foreground mb-3">
               Hole {hole.number} • Par {hole.par} • HCP {hole.handicapIndex}
@@ -295,8 +336,8 @@ export const RoundEntryScreen: React.FC<Props> = ({ navigation, route }) => {
             Total Score: {holeScores.reduce((sum, hole) => sum + (hole.strokes || 0), 0)}
           </Text>
           <Text className="text-muted-foreground">
-            vs Par: {holeScores.reduce((sum, hole) => sum + (hole.strokes || 0), 0) - course.holes.reduce((sum, hole) => sum + hole.par, 0) > 0 ? '+' : ''}
-            {holeScores.reduce((sum, hole) => sum + (hole.strokes || 0), 0) - course.holes.reduce((sum, hole) => sum + hole.par, 0)}
+            vs Par: {holeScores.reduce((sum, hole) => sum + (hole.strokes || 0), 0) - getFilteredHoles(course.holes, holeSelection).reduce((sum, hole) => sum + hole.par, 0) > 0 ? '+' : ''}
+            {holeScores.reduce((sum, hole) => sum + (hole.strokes || 0), 0) - getFilteredHoles(course.holes, holeSelection).reduce((sum, hole) => sum + hole.par, 0)}
           </Text>
         </Card>
 

@@ -121,7 +121,11 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     const fairwaysMissedRight = round.holes.filter(hole => hole.fairwayHit === 'right').length;
     const girsHit = round.holes.filter(hole => hole.greenInRegulation).length;
     const upAndDowns = round.holes.filter(hole => hole.upAndDown).length;
-    const coursePar = course.holes.reduce((sum, hole) => sum + hole.par, 0);
+    
+    // Calculate par for only the holes that were played
+    const playedHoleNumbers = round.holes.map(score => score.holeNumber);
+    const playedCourseHoles = course.holes.filter(hole => playedHoleNumbers.includes(hole.number));
+    const coursePar = playedCourseHoles.reduce((sum, hole) => sum + hole.par, 0);
 
     return {
       totalPutts,
@@ -129,7 +133,7 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
       fairwayPercentage: fairwaysTracked > 0 ? (fairwaysHit / fairwaysTracked) * 100 : 0,
       fairwayMissedLeftPercentage: fairwaysTracked > 0 ? (fairwaysMissedLeft / fairwaysTracked) * 100 : 0,
       fairwayMissedRightPercentage: fairwaysTracked > 0 ? (fairwaysMissedRight / fairwaysTracked) * 100 : 0,
-      girPercentage: (girsHit / course.holes.length) * 100,
+      girPercentage: (girsHit / round.holes.length) * 100,
       upAndDownPercentage: upAndDowns > 0 ? (upAndDowns / round.holes.length) * 100 : 0,
       coursePar,
       scoreToPar: round.totalScore - coursePar
@@ -153,10 +157,35 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   const stats = calculateStats();
-  const frontNine = course.holes.slice(0, 9);
-  const backNine = course.holes.slice(9, 18);
-  const frontNineScores = round.holes.slice(0, 9);
-  const backNineScores = round.holes.slice(9, 18);
+  
+  // Detect which holes were actually played by examining the round data
+  const playedHoleNumbers = round.holes.map(score => score.holeNumber).sort((a, b) => a - b);
+  const isFrontNineOnly = playedHoleNumbers.every(num => num >= 1 && num <= 9);
+  const isBackNineOnly = playedHoleNumbers.every(num => num >= 10 && num <= 18);
+  const isFullRound = playedHoleNumbers.length === 18;
+  
+  // Get the actual holes that were played
+  const playedHoles = course.holes.filter(hole => playedHoleNumbers.includes(hole.number));
+  
+  // For display purposes, organize the holes
+  let frontNine: any[] = [];
+  let backNine: any[] = [];
+  let frontNineScores: any[] = [];
+  let backNineScores: any[] = [];
+  
+  if (isFrontNineOnly) {
+    frontNine = playedHoles;
+    frontNineScores = round.holes;
+  } else if (isBackNineOnly) {
+    backNine = playedHoles;
+    backNineScores = round.holes;
+  } else {
+    // Full round or mixed holes - keep original logic
+    frontNine = course.holes.slice(0, 9);
+    backNine = course.holes.slice(9, 18);
+    frontNineScores = round.holes.slice(0, 9);
+    backNineScores = round.holes.slice(9, 18);
+  }
 
   return (
     <ScrollView className="flex-1 bg-background">
@@ -206,8 +235,11 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           <Text className="text-lg font-semibold text-card-foreground mb-4">Scorecard</Text>
           
           {/* Front Nine */}
-          <View className="mb-4">
-            <Text className="text-md font-semibold text-card-foreground mb-2">Front 9</Text>
+          {frontNine.length > 0 && (
+            <View className="mb-4">
+              <Text className="text-md font-semibold text-card-foreground mb-2">
+                {isFrontNineOnly ? 'Front 9 (Holes 1-9)' : 'Front 9'}
+              </Text>
             
             {/* Header Row */}
             <View className="flex-row border-b border-border pb-2 mb-2">
@@ -264,14 +296,17 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                 <Text className="flex-1 text-center text-xs text-muted-foreground">
                   {frontNineScores.reduce((sum, hole) => sum + (hole.putts || 0), 0)}
                 </Text>
-              </View>
-            )}
-          </View>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Back Nine (if exists) */}
           {backNine.length > 0 && (
             <View className="mb-4">
-              <Text className="text-md font-semibold text-card-foreground mb-2">Back 9</Text>
+              <Text className="text-md font-semibold text-card-foreground mb-2">
+                {isBackNineOnly ? 'Back 9 (Holes 10-18)' : 'Back 9'}
+              </Text>
               
               {/* Header Row */}
               <View className="flex-row border-b border-border pb-2 mb-2">
@@ -336,7 +371,9 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
           {/* Total Row */}
           <View className="border-t-2 border-primary pt-2">
             <View className="flex-row">
-              <Text className="flex-1 text-center text-lg font-bold text-foreground">TOTAL</Text>
+              <Text className="flex-1 text-center text-lg font-bold text-foreground">
+                {isFrontNineOnly || isBackNineOnly ? 'TOTAL (9 holes)' : 'TOTAL'}
+              </Text>
               <Text className="flex-1 text-center text-lg font-bold text-primary">{round.totalScore}</Text>
             </View>
           </View>
@@ -409,8 +446,9 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         <Card className="mb-6">
           <Text className="text-lg font-semibold text-card-foreground mb-4">Notable Holes</Text>
           
-          {round.holes.map((holeScore, index) => {
-            const hole = course.holes[index];
+          {round.holes.map((holeScore) => {
+            const hole = course.holes.find(h => h.number === holeScore.holeNumber);
+            if (!hole) return null;
             const scoreName = getScoreName(holeScore.strokes, hole.par);
             
             // Only show notable scores (birdie or better, or double bogey or worse)
@@ -436,8 +474,9 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
             return null;
           }).filter(Boolean)}
           
-          {round.holes.every((holeScore, index) => {
-            const hole = course.holes[index];
+          {round.holes.every((holeScore) => {
+            const hole = course.holes.find(h => h.number === holeScore.holeNumber);
+            if (!hole) return true;
             const diff = holeScore.strokes - hole.par;
             return diff > -1 && diff < 2;
           }) && (

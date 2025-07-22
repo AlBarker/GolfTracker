@@ -45,13 +45,15 @@ export interface RoundStats {
   upAndDownPercentage: number;
 }
 
+export type HoleSelection = 'front9' | 'back9' | '18holes';
+
 export type RootStackParamList = {
   Home: undefined;
   CourseDetails: { courseId: string };
   AddCourse: undefined;
-  RoundEntry: { courseId: string; roundId?: string };
+  RoundEntry: { courseId: string; roundId?: string; holeSelection?: HoleSelection };
   HandicapEntry: { courseId: string };
-  LiveScoring: { courseId: string; handicap?: number; targetScore?: number };
+  LiveScoring: { courseId: string; handicap?: number; targetScore?: number; holeSelection?: HoleSelection };
   RoundDetails: { roundId: string };
   Login: undefined;
   SignUp: undefined;

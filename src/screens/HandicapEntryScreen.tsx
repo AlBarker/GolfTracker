@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Course } from '../types';
+import { RootStackParamList, Course, HoleSelection } from '../types';
 import { BackArrow, Button, Input, Card, Select } from '../components/ui';
 import { storageService } from '../utils/storage';
 
@@ -15,6 +15,7 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
   const [entryMode, setEntryMode] = useState<'handicap' | 'target'>('handicap');
   const [handicap, setHandicap] = useState('');
   const [targetScore, setTargetScore] = useState('');
+  const [holeSelection, setHoleSelection] = useState<HoleSelection>('18holes');
 
   useEffect(() => {
     loadCourse();
@@ -65,7 +66,7 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
         Alert.alert('Invalid Handicap', 'Please enter a valid handicap between 0 and 54');
         return;
       }
-      navigation.navigate('LiveScoring', { courseId, handicap: handicapValue });
+      navigation.navigate('LiveScoring', { courseId, handicap: handicapValue, holeSelection });
     } else {
       const targetValue = parseInt(targetScore);
       if (isNaN(targetValue) || targetValue < 18 || targetValue > 200) {
@@ -75,7 +76,7 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
       // Calculate effective handicap from target score
       const totalPar = course?.holes.reduce((sum, hole) => sum + hole.par, 0) || 72;
       const effectiveHandicap = Math.max(0, targetValue - totalPar);
-      navigation.navigate('LiveScoring', { courseId, handicap: effectiveHandicap, targetScore: targetValue });
+      navigation.navigate('LiveScoring', { courseId, handicap: effectiveHandicap, targetScore: targetValue, holeSelection });
     }
   };
 
@@ -120,6 +121,22 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
               { label: 'Set Target Score', value: 'target' },
             ]}
           />
+        </Card>
+
+        <Card className="mb-6">
+          <Text className="text-lg font-semibold text-card-foreground mb-4">Holes to Play</Text>
+          <Select
+            value={holeSelection}
+            onValueChange={(value) => setHoleSelection(value as HoleSelection)}
+            options={[
+              { label: '18 Holes (Full Round)', value: '18holes' },
+              { label: 'Front 9 (Holes 1-9)', value: 'front9' },
+              { label: 'Back 9 (Holes 10-18)', value: 'back9' },
+            ]}
+          />
+          <Text className="text-sm text-muted-foreground mt-2">
+            Choose which holes you want to play during this round.
+          </Text>
         </Card>
 
         {entryMode === 'handicap' ? (

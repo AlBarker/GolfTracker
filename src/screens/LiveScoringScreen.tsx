@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Course, Round, HoleScore } from '../types';
+import { RootStackParamList, Course, Round, HoleScore, HoleSelection } from '../types';
 import { BackArrow, Button, Input, Card, Select } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { randomUUID } from 'expo-crypto';
@@ -10,7 +10,7 @@ import { randomUUID } from 'expo-crypto';
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveScoring'>;
 
 export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { courseId, handicap, targetScore } = route.params;
+  const { courseId, handicap, targetScore, holeSelection: initialHoleSelection } = route.params;
   const insets = useSafeAreaInsets();
   const [course, setCourse] = useState<Course | null>(null);
   const [currentHole, setCurrentHole] = useState(0);
@@ -23,17 +23,31 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   });
   const [saving, setSaving] = useState(false);
   const [adjustedPars, setAdjustedPars] = useState<number[]>([]);
+  const [holeSelection, setHoleSelection] = useState<HoleSelection>(initialHoleSelection || '18holes');
+  const [filteredHoles, setFilteredHoles] = useState<any[]>([]);
 
   useEffect(() => {
     loadCourse();
   }, [courseId]);
 
-  const calculateAdjustedPars = (course: Course, handicapValue?: number) => {
+  const getFilteredHoles = (holes: any[], selection: HoleSelection) => {
+    switch (selection) {
+      case 'front9':
+        return holes.filter(hole => hole.number >= 1 && hole.number <= 9);
+      case 'back9':
+        return holes.filter(hole => hole.number >= 10 && hole.number <= 18);
+      case '18holes':
+      default:
+        return holes;
+    }
+  };
+
+  const calculateAdjustedPars = (holes: any[], handicapValue?: number) => {
     if (!handicapValue) {
-      return course.holes.map(hole => hole.par);
+      return holes.map(hole => hole.par);
     }
 
-    return course.holes.map(hole => {
+    return holes.map(hole => {
       let adjustedPar = hole.par;
       
       if (handicapValue > 0) {
@@ -47,7 +61,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const getDisplayPar = (holeIndex: number) => {
-    return adjustedPars[holeIndex] || course?.holes[holeIndex]?.par || 0;
+    return adjustedPars[holeIndex] || filteredHoles[holeIndex]?.par || 0;
   };
 
   const loadCourse = async () => {
@@ -57,21 +71,27 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
       setCourse(foundCourse || null);
 
       if (foundCourse) {
-        const pars = calculateAdjustedPars(foundCourse, handicap);
+        const filtered = getFilteredHoles(foundCourse.holes, holeSelection);
+        setFilteredHoles(filtered);
+        
+        const pars = calculateAdjustedPars(filtered, handicap);
         setAdjustedPars(pars);
         
         setHoleScores(
-          foundCourse.holes.map((hole, index) => ({
+          filtered.map((hole, index) => ({
             holeNumber: hole.number,
             strokes: pars[index],
           }))
         );
-        setCurrentScore({
-          holeNumber: 1,
-          strokes: pars[0],
-          greenInRegulation: null,
-          upAndDown: null,
-        });
+        
+        if (filtered.length > 0) {
+          setCurrentScore({
+            holeNumber: filtered[0].number,
+            strokes: pars[0],
+            greenInRegulation: null,
+            upAndDown: null,
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading course:', error);
@@ -116,11 +136,11 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     newHoleScores[currentHole] = currentScore;
     setHoleScores(newHoleScores);
 
-    if (currentHole < course.holes.length - 1) {
+    if (currentHole < filteredHoles.length - 1) {
       const nextHoleIndex = currentHole + 1;
       setCurrentHole(nextHoleIndex);
       setCurrentScore({
-        holeNumber: nextHoleIndex + 1,
+        holeNumber: filteredHoles[nextHoleIndex].number,
         strokes: getDisplayPar(nextHoleIndex),
         greenInRegulation: null,
         upAndDown: null,
@@ -181,7 +201,16 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     );
   }
 
-  const hole = course.holes[currentHole];
+  const hole = filteredHoles[currentHole];
+  
+  if (!hole) {
+    return (
+      <View className="flex-1 justify-center items-center bg-background">
+        <Text className="text-muted-foreground">Loading holes...</Text>
+      </View>
+    );
+  }
+  
   const displayPar = getDisplayPar(currentHole);
   const originalPar = hole.par;
   const totalScore = holeScores.slice(0, currentHole).reduce((sum, hole) => sum + hole.strokes, 0) + (currentScore.strokes || 0);
@@ -209,6 +238,8 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
         <View className="px-4 pb-6">
+        
+        
         {/* Main Score Input - Prominent */}
         <Card className="mb-6 bg-primary/5 border border-primary/20">
           <View className="items-center mb-4">
@@ -389,7 +420,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
           )}
           
           <Button
-            title={currentHole === course.holes.length - 1 ? (saving ? "Finishing..." : "Finish Round") : "Next Hole"}
+            title={currentHole === filteredHoles.length - 1 ? (saving ? "Finishing..." : "Finish Round") : "Next Hole"}
             onPress={nextHole}
             disabled={saving}
             className="flex-1"
@@ -398,7 +429,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
         
         <View className="mt-2">
           <Text className="text-muted-foreground text-center text-sm">
-            Hole {currentHole + 1} of {course.holes.length}
+            Hole {currentHole + 1} of {filteredHoles.length}
           </Text>
         </View>
       </View>
