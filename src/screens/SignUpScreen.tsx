@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { RootStackParamList } from '../types';
 import { Button } from '../components/ui';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
 
@@ -13,8 +14,20 @@ export const SignUpScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isAppleSignInAvailable, setIsAppleSignInAvailable] = useState(false);
   const navigation = useNavigation<SignUpScreenNavigationProp>();
   const { signUp, signInWithApple } = useAuth();
+
+  useEffect(() => {
+    const checkAppleSignInAvailability = async () => {
+      const available = await AppleAuthentication.isAvailableAsync();
+      setIsAppleSignInAvailable(available);
+    };
+    
+    if (Platform.OS === 'ios') {
+      checkAppleSignInAvailability();
+    }
+  }, []);
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
@@ -118,7 +131,7 @@ export const SignUpScreen: React.FC = () => {
               className="mt-6"
             />
 
-            {Platform.OS === 'ios' && (
+            {Platform.OS === 'ios' && isAppleSignInAvailable && (
               <>
                 <View className="flex-row items-center my-6">
                   <View className="flex-1 h-px bg-gray-300" />
@@ -127,13 +140,13 @@ export const SignUpScreen: React.FC = () => {
                 </View>
 
                 <View>
-                  <TouchableOpacity
+                  <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius={6}
+                    style={{ width: '100%', height: 48 }}
                     onPress={handleAppleSignIn}
-                    disabled={loading}
-                    className="w-full flex-row items-center justify-center px-4 py-3 border border-gray-300 rounded bg-black disabled:opacity-50"
-                  >
-                    <Text className="ml-2 text-white font-medium">Continue with Apple</Text>
-                  </TouchableOpacity>
+                  />
                 </View>
               </>
             )}
