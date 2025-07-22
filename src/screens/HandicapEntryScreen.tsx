@@ -99,25 +99,12 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 100 }}>
-        <Card className="mb-6">
-          <Text className="text-lg font-semibold text-card-foreground mb-4">{course.name}</Text>
-          <Text className="text-muted-foreground mb-4">
-            Course Par: {totalPar} • {course.holes.length} holes
+        <View className="mb-6 px-2">
+          <Text className="text-lg font-semibold text-card-foreground mb-2">{course.name}</Text>
+          <Text className="text-muted-foreground mb-2">
+            Course Par: {totalPar}
           </Text>
-        </Card>
-
-        <Card className="mb-6">
-          <Text className="text-lg font-semibold text-card-foreground mb-4">Scoring Mode</Text>
-          
-          <Select
-            value={entryMode}
-            onValueChange={(value) => setEntryMode(value as 'handicap' | 'target')}
-            options={[
-              { label: 'Use Handicap Index', value: 'handicap' },
-              { label: 'Set Target Score', value: 'target' },
-            ]}
-          />
-        </Card>
+        </View>
 
         <Card className="mb-6">
           <Text className="text-lg font-semibold text-card-foreground mb-4">Holes to Play</Text>
@@ -135,91 +122,79 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
           </Text>
         </Card>
 
-        {entryMode === 'handicap' ? (
-          <Card className="mb-6">
-            <Text className="text-lg font-semibold text-card-foreground mb-4">Handicap Index</Text>
-            <Input
-              value={handicap}
-              onChangeText={setHandicap}
-              keyboardType="decimal-pad"
-              placeholder="Enter your handicap (e.g., 18.0)"
-              className="mb-4"
-            />
-            <Text className="text-sm text-muted-foreground mb-4">
-              Your handicap will be used to calculate adjusted pars for each hole based on their difficulty.
-            </Text>
-            
-            {!isNaN(handicapValue) && handicapValue >= 0 && (
-              <View>
-                <Text className="text-sm font-medium text-card-foreground mb-2">
-                  Adjusted Course Par: {adjustedTotalPar} (was {totalPar})
-                </Text>
-                <Text className="text-xs text-muted-foreground">
-                  You'll receive {Math.floor(handicapValue)} stroke(s) on each hole, plus an additional stroke on the {handicapValue % 18} most difficult holes.
-                </Text>
-              </View>
-            )}
-          </Card>
-        ) : (
-          <Card className="mb-6">
-            <Text className="text-lg font-semibold text-card-foreground mb-4">Target Score</Text>
-            <Input
-              value={targetScore}
-              onChangeText={setTargetScore}
-              keyboardType="numeric"
-              placeholder="Enter your target score"
-              className="mb-4"
-            />
-            <Text className="text-sm text-muted-foreground mb-4">
-              Set a target score for your round. This will be converted to an effective handicap and applied to each hole.
-            </Text>
-            
-            {(() => {
-              const targetValue = parseInt(targetScore);
-              if (!isNaN(targetValue) && targetValue > totalPar) {
-                const effectiveHandicap = targetValue - totalPar;
-                const adjustments = calculateParAdjustments(effectiveHandicap, totalPar);
-                const adjustedTotalPar = adjustments.reduce((sum, adj) => sum + adj.adjustedPar, 0);
-                return (
-                  <View>
-                    <Text className="text-sm font-medium text-card-foreground mb-2">
-                      Effective Handicap: {effectiveHandicap} • Adjusted Course Par: {adjustedTotalPar}
-                    </Text>
-                    <Text className="text-xs text-muted-foreground">
-                      Your target of {targetValue} is {effectiveHandicap} over par, so you'll receive strokes accordingly.
-                    </Text>
-                  </View>
-                );
-              }
-              return null;
-            })()}
-          </Card>
-        )}
+        <Card className="mb-6">
+          <Text className="text-lg font-semibold text-card-foreground mb-4">Scoring Mode</Text>
+          
+          <Select
+            value={entryMode}
+            onValueChange={(value) => setEntryMode(value as 'handicap' | 'target')}
+            options={[
+              { label: 'Use Handicap Index', value: 'handicap' },
+              { label: 'Set Target Score', value: 'target' },
+            ]}
+          />
 
-        {entryMode === 'handicap' && !isNaN(handicapValue) && handicapValue > 0 && (
-          <Card className="mb-6">
-            <Text className="text-lg font-semibold text-card-foreground mb-4">Hole-by-Hole Adjustments</Text>
-            <View className="space-y-2">
-              {adjustments.map((adj) => (
-                <View key={adj.hole} className="flex-row justify-between items-center py-1">
-                  <Text className="text-card-foreground">Hole {adj.hole}</Text>
-                  <View className="flex-row items-center">
-                    <Text className="text-muted-foreground mr-2">Par {adj.originalPar}</Text>
-                    {adj.strokes > 0 && (
-                      <>
-                        <Text className="text-primary mr-2">+{adj.strokes}</Text>
-                        <Text className="text-card-foreground font-medium">= {adj.adjustedPar}</Text>
-                      </>
-                    )}
-                    {adj.strokes === 0 && (
-                      <Text className="text-card-foreground">= {adj.adjustedPar}</Text>
-                    )}
-                  </View>
+          {entryMode === 'handicap' ? (
+            <>
+              <Text className="text-lg font-semibold text-card-foreground mb-4">Handicap Index</Text>
+              <Input
+                value={handicap}
+                onChangeText={setHandicap}
+                keyboardType="decimal-pad"
+                placeholder="Enter your handicap (e.g., 18.0)"
+                className="mb-4"
+              />
+              <Text className="text-sm text-muted-foreground mb-4">
+                Your handicap will be used to calculate adjusted pars for each hole based on their difficulty.
+              </Text>
+              
+              {!isNaN(handicapValue) && handicapValue >= 0 && (
+                <View>
+                  <Text className="text-sm font-medium text-card-foreground mb-2">
+                    Adjusted Course Par: {adjustedTotalPar} (was {totalPar})
+                  </Text>
                 </View>
-              ))}
-            </View>
-          </Card>
-        )}
+              )}
+            </>
+          ) : (
+            <>
+              <Text className="text-lg font-semibold text-card-foreground mb-4">Target Score</Text>
+              <Input
+                value={targetScore}
+                onChangeText={setTargetScore}
+                keyboardType="numeric"
+                placeholder="Enter your target score"
+                className="mb-4"
+              />
+              <Text className="text-sm text-muted-foreground mb-4">
+                Set a target score for your round. This will be converted to an effective handicap and applied to each hole.
+              </Text>
+              
+              {(() => {
+                const targetValue = parseInt(targetScore);
+                if (!isNaN(targetValue) && targetValue > totalPar) {
+                  const effectiveHandicap = targetValue - totalPar;
+                  const adjustments = calculateParAdjustments(effectiveHandicap, totalPar);
+                  const adjustedTotalPar = adjustments.reduce((sum, adj) => sum + adj.adjustedPar, 0);
+                  return (
+                    <View>
+                      <Text className="text-sm font-medium text-card-foreground mb-2">
+                        Effective Handicap: {effectiveHandicap} • Adjusted Course Par: {adjustedTotalPar}
+                      </Text>
+                      <Text className="text-xs text-muted-foreground">
+                        Your target of {targetValue} is {effectiveHandicap} over par, so you'll receive strokes accordingly.
+                      </Text>
+                    </View>
+                  );
+                }
+                return null;
+              })()}
+            </>
+          )}
+        </Card>
+
+
+        
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0 bg-background border-t border-border p-4">
