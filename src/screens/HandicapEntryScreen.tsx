@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, HoleSelection } from '../types';
-import { BackArrow, Button, Input, Card, Select } from '../components/ui';
+import { BackArrow, Button, Input, Card, Select, LoadingSpinner } from '../components/ui';
 import { storageService } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HandicapEntry'>;
@@ -81,11 +81,7 @@ export const HandicapEntryScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   if (!course) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-muted-foreground">Loading course...</Text>
-      </View>
-    );
+    return <LoadingSpinner message="Loading course setup..." />;
   }
 
   const totalPar = course.holes.reduce((sum, hole) => sum + hole.par, 0);

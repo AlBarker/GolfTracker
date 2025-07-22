@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round } from '../types';
-import { Button, Card } from '../components/ui';
+import { Button, Card, LoadingSpinner } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -126,11 +126,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-muted-foreground">Loading courses...</Text>
-      </View>
-    );
+    return <LoadingSpinner message="Loading courses..." />;
   }
 
   const handleLogout = async () => {

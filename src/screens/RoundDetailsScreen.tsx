@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round } from '../types';
-import { BackArrow, Button, Card } from '../components/ui';
+import { BackArrow, Button, Card, LoadingSpinner } from '../components/ui';
 import { storageService } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoundDetails'>;
@@ -141,11 +141,7 @@ export const RoundDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-muted-foreground">Loading round...</Text>
-      </View>
-    );
+    return <LoadingSpinner message="Loading round details..." />;
   }
 
   if (!round || !course) {

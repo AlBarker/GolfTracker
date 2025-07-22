@@ -4,3 +4,4 @@ export { Input } from './Input';
 export { Card } from './Card';
 export { Select } from './Select';
 export { Switch } from './Switch';
+export { LoadingSpinner } from './LoadingSpinner';

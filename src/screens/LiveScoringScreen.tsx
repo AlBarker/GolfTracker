@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore, HoleSelection } from '../types';
-import { BackArrow, Button, Input, Card, Select } from '../components/ui';
+import { BackArrow, Button, Input, Card, Select, LoadingSpinner } from '../components/ui';
 import { storageService } from '../utils/storage';
 import { randomUUID } from 'expo-crypto';
 
@@ -194,21 +194,13 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   if (!course) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-muted-foreground">Loading course...</Text>
-      </View>
-    );
+    return <LoadingSpinner message="Loading course..." />;
   }
 
   const hole = filteredHoles[currentHole];
   
   if (!hole) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-muted-foreground">Loading holes...</Text>
-      </View>
-    );
+    return <LoadingSpinner message="Preparing holes..." />;
   }
   
   const displayPar = getDisplayPar(currentHole);
