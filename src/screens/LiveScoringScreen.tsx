@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Alert, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Course, Round, HoleScore, HoleSelection } from '../types';
@@ -27,10 +27,21 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
   const [filteredHoles, setFilteredHoles] = useState<any[]>([]);
   const [editingNotes, setEditingNotes] = useState('');
   const [notesChanged, setNotesChanged] = useState(false);
+  const [resumeRoundId, setResumeRoundId] = useState<string | null>(null);
 
   useEffect(() => {
     loadCourse();
   }, [courseId]);
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      showExitConfirmation();
+      return true; // Prevent default back behavior
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    return () => backHandler.remove();
+  }, []);
 
   useEffect(() => {
     // Update notes when hole changes
@@ -86,7 +97,7 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
         
         const pars = calculateAdjustedPars(filtered, handicap);
         setAdjustedPars(pars);
-        
+
         setHoleScores(
           filtered.map((hole, index) => ({
             holeNumber: hole.number,
@@ -198,6 +209,27 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   };
 
+  const showExitConfirmation = () => {
+    Alert.alert(
+      'Exit Live Scoring',
+      'Do you want to save your progress and exit?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Exit Without Saving',
+          style: 'destructive',
+          onPress: async () => {
+            navigation.goBack();
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
   const finishRound = async (finalScores: HoleScore[]) => {
     if (!course) return;
 
@@ -264,7 +296,12 @@ export const LiveScoringScreen: React.FC<Props> = ({ navigation, route }) => {
     <View className="flex-1 bg-background">
       <View className="px-4 pt-6" style={{ paddingTop: insets.top + 24 }}>
         <View className="flex-row items-center mb-4">
-          <BackArrow />
+        <TouchableOpacity
+          onPress={showExitConfirmation}
+          className="flex-row items-center justify-center w-10 h-10 rounded-full bg-gray-100 active:bg-gray-200"
+        >
+          <Text className="text-xl text-gray-700">←</Text>
+        </TouchableOpacity>
           <Text className="text-2xl font-bold text-foreground ml-4">Live Scoring</Text>
         </View>
       </View>
