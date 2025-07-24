@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { RootStackParamList } from './src/types';
 import {
   HomeScreen,
+  SettingsScreen,
   AddCourseScreen,
   CourseDetailsScreen,
   RoundEntryScreen,
@@ -43,6 +44,7 @@ const AuthenticatedApp: React.FC = () => {
         {user ? (
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="AddCourse" component={AddCourseScreen} />
             <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
             <Stack.Screen name="RoundEntry" component={RoundEntryScreen} />

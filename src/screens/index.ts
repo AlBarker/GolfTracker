@@ -1,4 +1,5 @@
 export { HomeScreen } from './HomeScreen';
+export { SettingsScreen } from './SettingsScreen';
 export { AddCourseScreen } from './AddCourseScreen';
 export { CourseDetailsScreen } from './CourseDetailsScreen';
 export { RoundEntryScreen } from './RoundEntryScreen';

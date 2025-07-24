@@ -50,6 +50,7 @@ export type HoleSelection = 'front9' | 'back9' | '18holes';
 
 export type RootStackParamList = {
   Home: undefined;
+  Settings: undefined;
   CourseDetails: { courseId: string };
   AddCourse: undefined;
   RoundEntry: { courseId: string; roundId?: string; holeSelection?: HoleSelection };
